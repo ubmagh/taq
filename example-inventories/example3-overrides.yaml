@@ -1,0 +1,13 @@
+groups:
+  cache:
+    labels:
+      layer: cache
+      region: us-east
+    hosts:
+      - name: cache-01
+        address: cache01.example.com
+      - name: cache-02
+        address: cache02.example.com
+        labels:
+          region: us-west   # override
+          env: staging

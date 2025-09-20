@@ -1,0 +1,53 @@
+groups:
+  staging:
+    labels:
+      env: staging
+    hosts:
+      - name: web-stg-01
+        address: stg-web01.internal
+        labels:
+          layer: web
+      - name: db-stg-01
+        address: stg-db01.internal
+        user: postgres
+        labels:
+          layer: db
+
+  prod:
+    labels:
+      env: prod
+    hosts:
+      - name: web-prd-01
+        address: prd-web01.internal
+        labels:
+          layer: web
+      - name: web-prd-02
+        address: prd-web02.internal
+        labels:
+          layer: web
+      - name: db-prd-01
+        address: prd-db01.internal
+        user: postgres
+        labels:
+          layer: db
+      - name: cache-prd-01
+        address: prd-cache01.internal
+        labels:
+          layer: cache
+
+  staging-eu:
+    labels:
+      region: eu
+    groups:
+        web:
+          labels:
+            layer: web
+          hosts:
+            - name: web-01
+              address: euw-web01.internal
+        db:
+          labels:
+            layer: db
+          hosts:
+            - name: db-01
+              address: euw-db01.internal

@@ -1,0 +1,19 @@
+groups:
+  web:
+    labels:
+      layer: web
+      region: eu-west
+    hosts:
+      - name: web-01
+        address: web01.example.com
+      - name: web-02
+        address: web02.example.com
+
+  db:
+    labels:
+      layer: db
+      region: eu-west
+    hosts:
+      - name: db-01
+        address: 10.0.0.50
+        user: dbuser
