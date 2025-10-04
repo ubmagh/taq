@@ -18,7 +18,6 @@ func ParseInventoryFile(out interface{}) ([]types.Host, error) {
 	var inv types.Inventory
 	if err := yaml.Unmarshal(data, &inv); err != nil {
 		return nil, err
-
 	}
 
 	var flattened_hosts []types.Host
@@ -28,20 +27,21 @@ func ParseInventoryFile(out interface{}) ([]types.Host, error) {
 		flattened_hosts = append(flattened_hosts, h)
 	}
 
-	// // hosts in groups
-	// for _, g := range inv.Groups {
-	// 	// hosts directly under group
-	// 	for _, h := range g.Hosts {
-	// 		merged := make(map[string]string)
-	// 		for k, v := range g.Labels {
-	// 			merged[k] = v
-	// 		}
-	// 		for k, v := range h.Labels {
-	// 			merged[k] = v
-	// 		}
-	// 		h.Labels = merged
-	// 		flattened_hosts = append(flattened_hosts, h)
-	// 	}
+	// hosts in groups
+	for _, g := range inv.Groups {
+		// hosts directly under group
+		for _, h := range g.Hosts {
+			merged := make(map[string]string)
+			for k, v := range g.Labels {
+				merged[k] = v
+			}
+			for k, v := range h.Labels {
+				merged[k] = v
+			}
+			h.Labels = merged
+			flattened_hosts = append(flattened_hosts, h)
+		}
+	}
 
 	// 	// hosts in subgroups
 	// 	for _, sg := range g.Groups {
@@ -80,6 +80,5 @@ func ParseInventoryFile(out interface{}) ([]types.Host, error) {
 	// 	}
 	// }
 
-	// return hosts, nil
-	return nil, nil
+	return flattened_hosts, nil
 }
