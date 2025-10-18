@@ -8,12 +8,6 @@ type Host struct {
 	Labels  map[string]string `yaml:"labels,omitempty"`
 }
 
-type Subgroup struct {
-	Labels map[string]string `yaml:"labels,omitempty"`
-	Hosts  []Host            `yaml:"hosts"`
-	Groups map[string]string `yaml:"groups,omitempty"`
-}
-
 type Group struct {
 	Labels map[string]string `yaml:"labels,omitempty"`
 	Hosts  []Host            `yaml:"hosts"`

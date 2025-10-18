@@ -28,57 +28,20 @@ func ParseInventoryFile(out interface{}) ([]types.Host, error) {
 	}
 
 	// hosts in groups
-	for _, g := range inv.Groups {
-		// hosts directly under group
+	for gk, g := range inv.Groups {
 		for _, h := range g.Hosts {
-			merged := make(map[string]string)
+			mergedLabels := make(map[string]string)
 			for k, v := range g.Labels {
-				merged[k] = v
+				mergedLabels[k] = v
 			}
 			for k, v := range h.Labels {
-				merged[k] = v
+				mergedLabels[k] = v
 			}
-			h.Labels = merged
+			mergedLabels["groupName"] = gk
+			h.Labels = mergedLabels
 			flattened_hosts = append(flattened_hosts, h)
 		}
 	}
-
-	// 	// hosts in subgroups
-	// 	for _, sg := range g.Groups {
-	// 		for _, h := range sg.Hosts {
-	// 			merged := make(map[string]string)
-	// 			for k, v := range g.Labels {
-	// 				merged[k] = v
-	// 			}
-	// 			for k, v := range sg.Labels {
-	// 				merged[k] = v
-	// 			}
-	// 			for k, v := range h.Labels {
-	// 				merged[k] = v
-	// 			}
-	// 			h.Labels = merged
-	// 			flattened_hosts = append(flattened_hosts, h)
-	// 		}
-	// 	}
-	// }
-
-	// if out != nil {
-
-	// }
-	// return flattened_hosts, nil
-	// for _, g := range inv.Groups {
-	// 	for _, h := range g.Hosts {
-	// 		merged := make(map[string]string)
-	// 		for k, v := range g.Labels {
-	// 			merged[k] = v
-	// 		}
-	// 		for k, v := range h.Labels {
-	// 			merged[k] = v
-	// 		}
-	// 		h.Labels = merged
-	// 		hosts = append(hosts, h)
-	// 	}
-	// }
 
 	return flattened_hosts, nil
 }
