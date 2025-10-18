@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/ubmagh/taq/parser"
+	"github.com/ubmagh/taq/search"
 )
 
 func main() {
-	fmt.Print("Hey there.\n")
 
 	inventory_hosts, err := parser.ParseInventoryFile(nil)
 	if err != nil {
@@ -17,6 +17,8 @@ func main() {
 	}
 
 	fmt.Printf("Parsed inventory:\n%+v\n\n", inventory_hosts)
+
+	search.RunSearcher(inventory_hosts)
 
 	os.Exit(0)
 }
