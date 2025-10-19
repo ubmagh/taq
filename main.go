@@ -9,6 +9,11 @@ import (
 )
 
 func main() {
+	const Version = "v1.0.0"
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
+		fmt.Println("taq", Version)
+		return
+	}
 
 	inventory_hosts, err := parser.ParseInventoryFile(nil)
 	if err != nil {
