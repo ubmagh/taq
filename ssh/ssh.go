@@ -16,7 +16,6 @@ func OpenSSHSession(h types.Host) {
 	cmd := exec.Command("clear")
 	cmd.Stdout = os.Stdout
 	_ = cmd.Run()
-	fmt.Println(h.GetSshCommand())
 	cmd = exec.Command("ssh", h.GetSshCommand()...)
 	// Attach to current terminal
 	cmd.Stdin = os.Stdin
