@@ -14,3 +14,4 @@ The default inventory file `~/.config/taq.inventory.yaml` can be altered by sett
 - nested groups ? 
 - support remote inventory (url, repo)
 - multiple files ? 
+- customized list styling ? 
