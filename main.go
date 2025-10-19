@@ -16,8 +16,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Parsed inventory:\n%+v\n\n", inventory_hosts)
-
 	search.RunSearcher(inventory_hosts)
 
 	os.Exit(0)

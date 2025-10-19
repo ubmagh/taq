@@ -12,3 +12,6 @@ groups:
         labels:
           region: us-west   # override
           env: staging
+      - name: real-testing
+        address: lb-test.lon1.ibm.youcancorp.com
+        user: root

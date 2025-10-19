@@ -9,14 +9,15 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	ssh "github.com/ubmagh/taq/ssh"
+	"github.com/ubmagh/taq/ssh"
 	"github.com/ubmagh/taq/types"
 )
 
 type SearchModel struct {
-	input textinput.Model
-	list  list.Model
-	hosts []types.Host
+	input        textinput.Model
+	list         list.Model
+	hosts        []types.Host
+	selectedHost types.Host
 }
 
 var (
@@ -120,8 +121,11 @@ func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "enter":
 			if selected, ok := m.list.SelectedItem().(item); ok {
-				h := selected.host // assuming HostItem wraps types.Host
-				go ssh.OpenSSHSession(h)
+				m.selectedHost = selected.host
+				return m, tea.Sequence(
+					tea.ClearScreen,
+					tea.Quit,
+				)
 			}
 		}
 
@@ -159,12 +163,16 @@ func NewSearcher(hosts []types.Host) SearchModel {
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
 
-	return SearchModel{ti, l, hosts}
+	return SearchModel{ti, l, hosts, types.Host{}}
 }
 
 func RunSearcher(hosts []types.Host) {
 	p := tea.NewProgram(NewSearcher(hosts))
-	if err := p.Start(); err != nil {
+	model, err := p.Run()
+	if err != nil {
 		panic(err)
+	}
+	if sm, ok := model.(SearchModel); ok && sm.selectedHost.Address != "" {
+		ssh.OpenSSHSession(sm.selectedHost)
 	}
 }

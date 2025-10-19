@@ -13,8 +13,10 @@ func OpenSSHSession(h types.Host) {
 		fmt.Println("⚠️  No address found for host.")
 		return
 	}
-
-	cmd := exec.Command("ssh", h.GetSshCommand())
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	_ = cmd.Run()
+	cmd = exec.Command("ssh", h.GetSshCommand())
 	// Attach to current terminal
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
