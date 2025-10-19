@@ -4,7 +4,6 @@ Easily find that instance you wanna ssh into, instead of browsing commands histo
 
 ## Todos 
 
-- ports config
 - nested groups ? 
 - support remote inventory (url, repo)
 - multiple files ? 

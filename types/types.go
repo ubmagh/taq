@@ -11,6 +11,7 @@ type Host struct {
 	User             string            `yaml:"user,omitempty"`
 	KeyPath          string            `yaml:"key_path,omitempty"`
 	Labels           map[string]string `yaml:"labels,omitempty"`
+	Port             string            `yaml:"port,omitempty"`
 	SearchableString string
 }
 
@@ -33,14 +34,17 @@ func (h Host) HostListDisplay() string {
 	return fmt.Sprintf("%s (%s @ %s)\n", h.Name, h.User, h.Address)
 }
 
-func (h Host) GetSshCommand() string {
-	command := ""
+func (h Host) GetSshCommand() []string {
+	args := []string{}
 	if len(h.KeyPath) > 0 {
-		command = fmt.Sprintf("-i \"%s\" %s@%s", h.KeyPath, h.User, h.Address)
-	} else {
-		command = fmt.Sprintf("%s@%s", h.User, h.Address)
+		args = append(args, fmt.Sprintf("-i \"%s\"", h.KeyPath))
 	}
-	return command
+	if len(h.Port) > 0 {
+		args = append(args, fmt.Sprintf("-p %s", strings.TrimSpace(h.Port)))
+	}
+	args = append(args, fmt.Sprintf("%s@%s", h.User, h.Address))
+
+	return args
 }
 
 type Group struct {

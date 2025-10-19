@@ -16,7 +16,8 @@ func OpenSSHSession(h types.Host) {
 	cmd := exec.Command("clear")
 	cmd.Stdout = os.Stdout
 	_ = cmd.Run()
-	cmd = exec.Command("ssh", h.GetSshCommand())
+	fmt.Println(h.GetSshCommand())
+	cmd = exec.Command("ssh", h.GetSshCommand()...)
 	// Attach to current terminal
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -24,6 +25,10 @@ func OpenSSHSession(h types.Host) {
 
 	// Run SSH directly (blocking until exit)
 	if err := cmd.Run(); err != nil {
+		exitcode := err.(*exec.ExitError)
+		if exitcode.String() == "130" || exitcode.String() == "exit status 130" {
+			return
+		}
 		fmt.Printf("❌ SSH connection failed: %v\n", err)
 	}
 }
