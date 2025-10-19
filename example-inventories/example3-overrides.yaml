@@ -7,6 +7,7 @@ groups:
       - name: cache-01
         address: cache01.example.com
       - name: cache-02
+        user: ubuntu
         address: cache02.example.com
         labels:
           region: us-west   # override

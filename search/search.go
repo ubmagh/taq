@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	ssh "github.com/ubmagh/taq/ssh"
 	"github.com/ubmagh/taq/types"
 )
 
@@ -27,9 +28,14 @@ var (
 	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
 
-type item string
+type item struct {
+	host types.Host
+	desc string
+}
 
-func (i item) FilterValue() string { return string(i) }
+func (i item) Title() string       { return string("title") }
+func (i item) Description() string { return string("desc") }
+func (i item) FilterValue() string { return string(i.host.HostListDisplay()) }
 
 type itemDelegate struct{}
 
@@ -44,10 +50,13 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 	str := fmt.Sprintf("%d. %s", index+1, i)
 
-	fn := itemStyle.Render
+	fn := func(s ...string) string {
+		return itemStyle.Render(i.host.HostListDisplay())
+	}
+
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return selectedItemStyle.Render("> " + strings.Join(s, " "))
+			return selectedItemStyle.Render("> " + i.host.HostListDisplay())
 		}
 	}
 
@@ -59,17 +68,36 @@ func (m SearchModel) Init() tea.Cmd { return textinput.Blink }
 func toListItems(hosts []types.Host) []list.Item {
 	items := []list.Item{}
 	for _, h := range hosts {
-		items = append(items, item(fmt.Sprintf("%s (%s)", h.Name, h.Address)))
+		items = append(items, item{host: h, desc: h.HostListDisplay()})
 	}
 	return items
 }
 
 func (m *SearchModel) filterList() {
-	query := strings.ToLower(m.input.Value())
+	query := strings.TrimSpace(strings.ToLower(m.input.Value()))
+	if query == "" {
+		m.list.SetItems(toListItems(m.hosts))
+		return
+	}
+
+	keywords := strings.FieldsFunc(query, func(r rune) bool {
+		return r == ' ' || r == ','
+	})
+
+	for i := range keywords {
+		keywords[i] = strings.ToLower(strings.TrimSpace(keywords[i]))
+	}
 	filtered := []types.Host{}
+
 	for _, h := range m.hosts {
-		if strings.Contains(strings.ToLower(h.Name), query) ||
-			strings.Contains(strings.ToLower(h.Address), query) {
+		ok := true
+		for _, kw := range keywords {
+			if !strings.Contains(h.SearchableString, kw) {
+				ok = false
+				break
+			}
+		}
+		if ok {
 			filtered = append(filtered, h)
 		}
 	}
@@ -78,12 +106,25 @@ func (m *SearchModel) filterList() {
 
 func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	// var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
+		case "down":
+			m.list.CursorDown()
+			return m, nil
+		case "up":
+			m.list.CursorUp()
+			return m, nil
+		case "enter":
+			if selected, ok := m.list.SelectedItem().(item); ok {
+				h := selected.host // assuming HostItem wraps types.Host
+				go ssh.OpenSSHSession(h)
+			}
 		}
+
 	}
 
 	m.input, cmd = m.input.Update(msg)
@@ -92,7 +133,11 @@ func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m SearchModel) View() string {
-	return fmt.Sprintf("Search by keywords: %20s\n\n%s", m.input.View(), m.list.View())
+	help := lipgloss.NewStyle().
+		Faint(true).
+		Render("`↑/↓` navigate • `Enter` connect • `Esc/Ctrl+C` exit")
+
+	return fmt.Sprintf("Search by keywords: %s\n%s%s", m.input.View(), m.list.View(), help)
 }
 
 func NewSearcher(hosts []types.Host) SearchModel {
@@ -105,11 +150,12 @@ func NewSearcher(hosts []types.Host) SearchModel {
 	ti.Focus()
 
 	l := list.New(items, itemDelegate{}, 0, 10)
-	l.SetShowHelp(true)
+	l.SetShowHelp(false)
 	l.SetShowTitle(true)
 	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
+	l.SetShowPagination(true)
 	l.Styles.Title = titleStyle
+	l.Title = "Target instances"
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
 
