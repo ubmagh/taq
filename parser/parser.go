@@ -2,54 +2,47 @@ package parser
 
 import (
 	"fmt"
+	"maps"
 	"os"
 
 	"github.com/goccy/go-yaml"
 	"github.com/ubmagh/taq/config"
-	"github.com/ubmagh/taq/types"
+	"github.com/ubmagh/taq/host"
 )
 
-func ParseInventoryFile(out interface{}) ([]types.Host, error) {
+func ParseInventoryFile() ([]host.Host, error) {
 	data, err := os.ReadFile(config.GetDefaultInventoryPath())
 	if err != nil {
-		return nil, fmt.Errorf("[Err] failed to read inventory file: %w", err)
+		return nil, fmt.Errorf("failed to read inventory file: %w", err)
 	}
 
-	var inv types.Inventory
+	var inv host.Inventory
 	if err := yaml.Unmarshal(data, &inv); err != nil {
 		return nil, err
 	}
 
-	var flattened_hosts []types.Host
-	currentUser := os.Getenv("USER")
+	var flattenedHosts []host.Host
+	defaultUser := config.GetDefaultUser()
 
-	// top level hosts
-	for _, h := range inv.Hosts {
-		flattened_hosts = append(flattened_hosts, h)
-	}
+	flattenedHosts = append(flattenedHosts, inv.Hosts...)
 
-	// hosts in groups
 	for gk, g := range inv.Groups {
 		for _, h := range g.Hosts {
 			mergedLabels := make(map[string]string)
-			for k, v := range g.Labels {
-				mergedLabels[k] = v
-			}
-			for k, v := range h.Labels {
-				mergedLabels[k] = v
-			}
+			maps.Copy(mergedLabels, g.Labels)
+			maps.Copy(mergedLabels, h.Labels)
 			mergedLabels["groupName"] = gk
 			h.Labels = mergedLabels
-			flattened_hosts = append(flattened_hosts, h)
+			flattenedHosts = append(flattenedHosts, h)
 		}
 	}
 
-	for i := range flattened_hosts {
-		if flattened_hosts[i].User == "" {
-			flattened_hosts[i].User = currentUser
+	for i := range flattenedHosts {
+		if flattenedHosts[i].User == "" {
+			flattenedHosts[i].User = defaultUser
 		}
-		flattened_hosts[i].BuildSearchable()
+		flattenedHosts[i].BuildSearchable()
 	}
 
-	return flattened_hosts, nil
+	return flattenedHosts, nil
 }

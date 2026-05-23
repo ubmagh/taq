@@ -6,36 +6,33 @@ import (
 
 	"github.com/ubmagh/taq/parser"
 	"github.com/ubmagh/taq/search"
+	"github.com/ubmagh/taq/ssh"
 )
 
+var version = "dev"
+
 func printHelp() {
-	fmt.Println(`
+	fmt.Print(`
 	taq - fast SSH search and connect CLI
-	
+
 	Usage:
-	taq            # launch interactive search
-	taq --help,-h  # show this help message
+	taq               # launch interactive search
+	taq --help,-h     # show this help message
 	taq --version,-v  # show version
 
-	Config:
-	TAQ_INVENTORY_PATH : environment variable to specify inventory file path, default : "~/.config/taq.inventory.yaml"
-
-	Features:
-	• Search hosts by name, address, user, and labels
-	• Interactive fuzzy search with up/down arrows
-	• Launch SSH session directly from the list
-	• Uses inventory from YAML file`)
+	Environment Variables:
+	TAQ_DEFAULT_USER         : Specifies default SSH username [$USER]
+	TAQ_DEFAULT_SSH_KEY_PATH : Default SSH key path. []
+	TAQ_ANSIBLE_INVS         : List of ansible projects inventories, (;) separated.  []
+	TAQ_INVENTORY_PATH       : Inventory file path ["~/.config/taq/inventory.yaml"]
+`)
 }
 
 func main() {
-	const Version = "v1.0.0"
-
 	if len(os.Args) > 1 {
-		arg := os.Args[1]
-
-		switch arg {
+		switch os.Args[1] {
 		case "--version", "-v":
-			fmt.Println("taq", Version)
+			fmt.Println("taq", version)
 			return
 		case "--help", "-h":
 			printHelp()
@@ -43,18 +40,13 @@ func main() {
 		}
 	}
 
-	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
-		fmt.Println("taq", Version)
-		return
-	}
-
-	inventory_hosts, err := parser.ParseInventoryFile(nil)
+	inventoryHosts, err := parser.ParseInventoryFile()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	search.RunSearcher(inventory_hosts)
-
-	os.Exit(0)
+	if h, ok := search.RunSearcher(inventoryHosts); ok {
+		ssh.OpenSSHSession(h)
+	}
 }

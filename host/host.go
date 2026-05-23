@@ -1,4 +1,4 @@
-package types
+package host
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ type Host struct {
 	KeyPath          string            `yaml:"key_path,omitempty"`
 	Labels           map[string]string `yaml:"labels,omitempty"`
 	Port             string            `yaml:"port,omitempty"`
-	SearchableString string
+	searchable string
 }
 
 func (h *Host) BuildSearchable() {
@@ -27,24 +27,13 @@ func (h *Host) BuildSearchable() {
 		sb.WriteString(v)
 		sb.WriteByte(' ')
 	}
-	h.SearchableString = strings.ToLower(sb.String())
+	h.searchable = strings.ToLower(sb.String())
 }
+
+func (h Host) Searchable() string { return h.searchable }
 
 func (h Host) HostListDisplay() string {
-	return fmt.Sprintf("%s (%s @ %s)\n", h.Name, h.User, h.Address)
-}
-
-func (h Host) GetSshCommand() []string {
-	args := []string{}
-	if len(h.KeyPath) > 0 {
-		args = append(args, fmt.Sprintf("-i \"%s\"", h.KeyPath))
-	}
-	if len(h.Port) > 0 {
-		args = append(args, fmt.Sprintf("-p %s", strings.TrimSpace(h.Port)))
-	}
-	args = append(args, fmt.Sprintf("%s@%s", h.User, h.Address))
-
-	return args
+	return fmt.Sprintf("%s (%s @ %s)", h.Name, h.User, h.Address)
 }
 
 type Group struct {
