@@ -13,7 +13,7 @@ import (
 )
 
 type ansibleGroup struct {
-	Hosts    map[string]ansibleVars `yaml:"hosts"`
+	Hosts    map[string]ansibleVars  `yaml:"hosts"`
 	Children map[string]ansibleGroup `yaml:"children"`
 	Vars     ansibleVars             `yaml:"vars"`
 }
@@ -38,6 +38,13 @@ func (v ansibleVars) str(key string) string {
 	}
 }
 
+// non-inventory Ansible dirs that never contain inventory files
+var ansibleSkipDirs = map[string]bool{
+	"group_vars": true, "host_vars": true, "roles": true,
+	"tasks": true, "handlers": true, "templates": true,
+	"files": true, "vars": true, "defaults": true, "meta": true,
+}
+
 func parseAnsibleDir(dir string) ([]host.Host, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -46,10 +53,18 @@ func parseAnsibleDir(dir string) ([]host.Host, error) {
 
 	var hosts []host.Host
 	for _, e := range entries {
+		name := e.Name()
 		if e.IsDir() {
+			if ansibleSkipDirs[name] {
+				continue
+			}
+			subHosts, err := parseAnsibleDir(filepath.Join(dir, name))
+			if err != nil {
+				return nil, err
+			}
+			hosts = append(hosts, subHosts...)
 			continue
 		}
-		name := e.Name()
 		if !strings.HasSuffix(name, ".yaml") && !strings.HasSuffix(name, ".yml") && name != "hosts" {
 			continue
 		}
@@ -70,7 +85,7 @@ func parseAnsibleFile(path string) ([]host.Host, error) {
 
 	var inv map[string]ansibleGroup
 	if err := yaml.Unmarshal(data, &inv); err != nil {
-		return nil, err
+		return nil, err // not an inventory file (e.g. playbook, vars file) — skip
 	}
 
 	var hosts []host.Host

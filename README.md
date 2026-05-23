@@ -53,7 +53,7 @@ Ctrl+C    exit
 
 Paths support `$HOME` and other environment variable expansion.
 
-`TAQ_ANSIBLE_INVS` expects directories, not files. taq walks each directory for `.yaml`/`.yml` files (skipping `group_vars`, `host_vars`, and other subdirectories). Multiple directories are separated by `;`:
+`TAQ_ANSIBLE_INVS` expects the **inventory root** directory (e.g. `inventories/`), not the whole project root. taq recursively walks each directory for `.yaml`/`.yml`/`hosts` yaml files, skipping known non-inventory dirs (`group_vars`, `host_vars`, `roles`, etc.). Multiple paths are separated by `;`:
 
 ```sh
 export TAQ_ANSIBLE_INVS="~/projects/infra/inventory;~/projects/app/inventory"
