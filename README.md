@@ -82,6 +82,7 @@ See `example-inventories/` for more examples.
 
 ## Todos
 
+- Configurable display mode (compact vs detailed list)
 - Multiple inventory sources ?
 - Nested groups ?
 - Remote inventory (URL, repository) ?

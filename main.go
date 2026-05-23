@@ -7,9 +7,12 @@ import (
 	"github.com/ubmagh/taq/parser"
 	"github.com/ubmagh/taq/search"
 	"github.com/ubmagh/taq/ssh"
+	"github.com/ubmagh/taq/ui"
 )
 
 var version = "dev"
+
+const repoURL = "https://github.com/ubmagh/taq"
 
 func printHelp() {
 	fmt.Print(`
@@ -32,7 +35,7 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "--version", "-v":
-			fmt.Println("taq", version)
+			fmt.Printf("taq %s - %s\n", version, repoURL)
 			return
 		case "--help", "-h":
 			printHelp()
@@ -42,7 +45,7 @@ func main() {
 
 	inventoryHosts, err := parser.Parse()
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		ui.Error("%v", err)
 		os.Exit(1)
 	}
 

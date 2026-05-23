@@ -8,6 +8,7 @@ import (
 
 	"github.com/ubmagh/taq/config"
 	"github.com/ubmagh/taq/host"
+	"github.com/ubmagh/taq/ui"
 )
 
 func sshArgs(h host.Host) []string {
@@ -28,7 +29,7 @@ func sshArgs(h host.Host) []string {
 
 func OpenSSHSession(h host.Host) {
 	if h.Address == "" {
-		fmt.Println("⚠️  No address found for host.")
+		ui.Warn("no address configured for host %q", h.Name)
 		return
 	}
 	cmd := exec.Command("clear")
@@ -43,6 +44,6 @@ func OpenSSHSession(h host.Host) {
 		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 130 {
 			return
 		}
-		fmt.Printf("❌ SSH connection failed: %v\n", err)
+		ui.Error("SSH connection failed: %v", err)
 	}
 }
