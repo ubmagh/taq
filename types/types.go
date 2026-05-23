@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"strings"
+
+	"github.com/ubmagh/taq/config"
 )
 
 type Host struct {
@@ -36,9 +38,11 @@ func (h Host) HostListDisplay() string {
 
 func (h Host) GetSshCommand() []string {
 	args := []string{}
-	if len(h.KeyPath) > 0 {
-		args = append(args, fmt.Sprintf("-i \"%s\"", h.KeyPath))
+	keyPath := h.KeyPath
+	if len(keyPath) == 0 {
+		keyPath = config.GetDefaultSshKeyPath()
 	}
+	args = append(args, fmt.Sprintf("-i \"%s\"", keyPath))
 	if len(h.Port) > 0 {
 		args = append(args, fmt.Sprintf("-p %s", strings.TrimSpace(h.Port)))
 	}

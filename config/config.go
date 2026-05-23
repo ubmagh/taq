@@ -30,3 +30,11 @@ func GetAnsibleInventories() []string {
 	}
 	return []string{}
 }
+
+func GetDefaultSshKeyPath() string {
+	const envSshKeyPath = "TAQ_DEFAULT_SSH_KEY_PATH"
+	if path := os.Getenv(envSshKeyPath); path != "" {
+		return path
+	}
+	return ""
+}
