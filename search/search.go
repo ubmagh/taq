@@ -11,7 +11,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sahilm/fuzzy"
-	"github.com/ubmagh/taq/ssh"
 	"github.com/ubmagh/taq/types"
 )
 
@@ -201,7 +200,7 @@ func NewSearcher(hosts []types.Host) SearchModel {
 	}
 }
 
-func RunSearcher(hosts []types.Host) {
+func RunSearcher(hosts []types.Host) (types.Host, bool) {
 	p := tea.NewProgram(NewSearcher(hosts))
 	model, err := p.Run()
 	if err != nil {
@@ -209,6 +208,7 @@ func RunSearcher(hosts []types.Host) {
 		os.Exit(1)
 	}
 	if sm, ok := model.(SearchModel); ok && sm.selectedHost.Address != "" {
-		ssh.OpenSSHSession(sm.selectedHost)
+		return sm.selectedHost, true
 	}
+	return types.Host{}, false
 }

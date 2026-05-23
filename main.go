@@ -6,6 +6,7 @@ import (
 
 	"github.com/ubmagh/taq/parser"
 	"github.com/ubmagh/taq/search"
+	"github.com/ubmagh/taq/ssh"
 )
 
 func printHelp() {
@@ -47,7 +48,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	search.RunSearcher(inventory_hosts)
+	if host, ok := search.RunSearcher(inventory_hosts); ok {
+		ssh.OpenSSHSession(host)
+	}
 
 	os.Exit(0)
 }

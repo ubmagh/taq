@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 	"strings"
-
-	"github.com/ubmagh/taq/config"
 )
 
 type Host struct {
@@ -36,23 +34,6 @@ func (h Host) HostListDisplay() string {
 	return fmt.Sprintf("%s (%s @ %s)", h.Name, h.User, h.Address)
 }
 
-func (h Host) GetSshCommand() []string {
-	args := []string{}
-	if len(h.KeyPath) > 0 {
-		args = append(args, fmt.Sprintf("-i \"%s\"", h.KeyPath))
-	} else {
-		defaultKey := config.GetDefaultSshKeyPath()
-		if len(defaultKey) > 0 {
-			args = append(args, fmt.Sprintf("-i \"%s\"", defaultKey))
-		}
-	}
-	if len(h.Port) > 0 {
-		args = append(args, fmt.Sprintf("-p %s", strings.TrimSpace(h.Port)))
-	}
-	args = append(args, fmt.Sprintf("%s@%s", h.User, h.Address))
-
-	return args
-}
 
 type Group struct {
 	Labels map[string]string `yaml:"labels,omitempty"`

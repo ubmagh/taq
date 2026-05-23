@@ -4,9 +4,27 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
+	"github.com/ubmagh/taq/config"
 	"github.com/ubmagh/taq/types"
 )
+
+func sshArgs(h types.Host) []string {
+	args := []string{}
+	keyPath := h.KeyPath
+	if keyPath == "" {
+		keyPath = config.GetDefaultSshKeyPath()
+	}
+	if keyPath != "" {
+		args = append(args, fmt.Sprintf("-i \"%s\"", keyPath))
+	}
+	if h.Port != "" {
+		args = append(args, fmt.Sprintf("-p %s", strings.TrimSpace(h.Port)))
+	}
+	args = append(args, fmt.Sprintf("%s@%s", h.User, h.Address))
+	return args
+}
 
 func OpenSSHSession(h types.Host) {
 	if h.Address == "" {
@@ -16,7 +34,7 @@ func OpenSSHSession(h types.Host) {
 	cmd := exec.Command("clear")
 	cmd.Stdout = os.Stdout
 	_ = cmd.Run()
-	cmd = exec.Command("ssh", h.GetSshCommand()...)
+	cmd = exec.Command("ssh", sshArgs(h)...)
 	// Attach to current terminal
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
