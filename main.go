@@ -10,7 +10,7 @@ import (
 	"github.com/ubmagh/taq/ui"
 )
 
-var version = "dev"
+var version = "main"
 
 const repoURL = "https://github.com/ubmagh/taq"
 
