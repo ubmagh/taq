@@ -86,12 +86,23 @@ func (m *SearchModel) filterList() {
 		searchables[i] = h.Searchable()
 	}
 
-	matches := fuzzy.Find(strings.ToLower(query), searchables)
+	lq := strings.ToLower(query)
+	matches := fuzzy.Find(lq, searchables)
 
+	seen := make(map[int]bool, len(matches))
 	filtered := make([]host.Host, 0, len(matches))
 	for _, match := range matches {
+		seen[match.Index] = true
 		filtered = append(filtered, m.hosts[match.Index])
 	}
+
+	// fuzzy handles names/groups well but struggles with IPs — supplement with address substring match
+	for i, h := range m.hosts {
+		if !seen[i] && strings.Contains(strings.ToLower(h.Address), lq) {
+			filtered = append(filtered, h)
+		}
+	}
+
 	m.list.SetItems(toListItems(filtered))
 }
 

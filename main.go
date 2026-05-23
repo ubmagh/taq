@@ -40,7 +40,7 @@ func main() {
 		}
 	}
 
-	inventoryHosts, err := parser.ParseInventoryFile()
+	inventoryHosts, err := parser.Parse()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
