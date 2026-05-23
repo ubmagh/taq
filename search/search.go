@@ -44,7 +44,7 @@ type item struct {
 
 func (i item) Title() string       { return i.host.Name }
 func (i item) Description() string { return i.host.Address }
-func (i item) FilterValue() string { return string(i.host.HostListDisplay()) }
+func (i item) FilterValue() string { return i.host.HostListDisplay() }
 
 type itemDelegate struct{}
 
@@ -57,23 +57,17 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
-	fn := func() string {
-		return itemStyle.Render(i.host.HostListDisplay())
-	}
-
 	if index == m.Index() {
-		fn = func() string {
-			return selectedItemStyle.Render("> " + i.host.HostListDisplay())
-		}
+		fmt.Fprint(w, selectedItemStyle.Render("> "+i.host.HostListDisplay()))
+	} else {
+		fmt.Fprint(w, itemStyle.Render(i.host.HostListDisplay()))
 	}
-
-	fmt.Fprint(w, fn())
 }
 
 func (m SearchModel) Init() tea.Cmd { return textinput.Blink }
 
 func toListItems(hosts []host.Host) []list.Item {
-	items := []list.Item{}
+	items := make([]list.Item, 0, len(hosts))
 	for _, h := range hosts {
 		items = append(items, item{host: h})
 	}
@@ -171,7 +165,6 @@ func (m SearchModel) View() string {
 func NewSearcher(hosts []host.Host) SearchModel {
 	items := toListItems(hosts)
 	ti := textinput.New()
-	ti.PlaceholderStyle.Blink(true).Width(1)
 	ti.Placeholder = "Type to search..."
 	ti.Width = 30
 	ti.CharLimit = 200

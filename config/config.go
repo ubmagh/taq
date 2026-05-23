@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	defaultInventoryPath = "~/.config/taq/inventory.yaml"
+	defaultInventoryPath = "$HOME/.config/taq/inventory.yaml"
 
 	envInventoryPath = "TAQ_INVENTORY_PATH"
 	envDefaultUser   = "TAQ_DEFAULT_USER"
@@ -15,10 +15,11 @@ const (
 )
 
 func GetDefaultInventoryPath() string {
-	if path := os.Getenv(envInventoryPath); path != "" {
-		return path
+	path := os.Getenv(envInventoryPath)
+	if path == "" {
+		path = defaultInventoryPath
 	}
-	return defaultInventoryPath
+	return os.ExpandEnv(path)
 }
 
 func GetDefaultUser() string {

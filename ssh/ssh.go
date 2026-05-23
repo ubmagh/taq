@@ -11,7 +11,7 @@ import (
 )
 
 func sshArgs(h host.Host) []string {
-	args := []string{}
+	var args []string
 	keyPath := h.KeyPath
 	if keyPath == "" {
 		keyPath = config.GetDefaultSshKeyPath()
@@ -35,15 +35,12 @@ func OpenSSHSession(h host.Host) {
 	cmd.Stdout = os.Stdout
 	_ = cmd.Run()
 	cmd = exec.Command("ssh", sshArgs(h)...)
-	// Attach to current terminal
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// Run SSH directly (blocking until exit)
 	if err := cmd.Run(); err != nil {
-		exitcode := err.(*exec.ExitError)
-		if exitcode.String() == "130" || exitcode.String() == "exit status 130" {
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 130 {
 			return
 		}
 		fmt.Printf("❌ SSH connection failed: %v\n", err)

@@ -13,7 +13,7 @@ import (
 func ParseInventoryFile() ([]host.Host, error) {
 	data, err := os.ReadFile(config.GetDefaultInventoryPath())
 	if err != nil {
-		return nil, fmt.Errorf("[Err] failed to read inventory file: %w", err)
+		return nil, fmt.Errorf("failed to read inventory file: %w", err)
 	}
 
 	var inv host.Inventory
@@ -24,9 +24,7 @@ func ParseInventoryFile() ([]host.Host, error) {
 	var flattenedHosts []host.Host
 	defaultUser := config.GetDefaultUser()
 
-	for _, h := range inv.Hosts {
-		flattenedHosts = append(flattenedHosts, h)
-	}
+	flattenedHosts = append(flattenedHosts, inv.Hosts...)
 
 	for gk, g := range inv.Groups {
 		for _, h := range g.Hosts {

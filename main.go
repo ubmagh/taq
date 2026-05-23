@@ -9,6 +9,8 @@ import (
 	"github.com/ubmagh/taq/ssh"
 )
 
+var version = "dev"
+
 func printHelp() {
 	fmt.Print(`
 	taq - fast SSH search and connect CLI
@@ -25,8 +27,6 @@ func printHelp() {
 	TAQ_INVENTORY_PATH       : Inventory file path ["~/.config/taq/inventory.yaml"]
 `)
 }
-
-var version = "dev"
 
 func main() {
 	if len(os.Args) > 1 {

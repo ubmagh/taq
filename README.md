@@ -1,38 +1,82 @@
 # taq
 
-Easily find that instance you wanna ssh into, instead of browsing commands history for so long. 
+Quickly find and SSH into any host in your inventory — no more digging through command history.
 
-## How it works 
+## How it works
 
-- Parses inventory files, either;
-  - A dedicated file `TAQ_INVENTORY_PATH=~/.config/taq.inventory.yaml` following examples on `example-inventories/`.
-  - Or Ansible projects yaml inventories, specified on the variable `TAQ_ANSIBLE_INVS`
-- Runs a fuzzy search on the parsed items based on input.
-- Returns an interactive list of found hosts.
-- SSH-es to the selected one.
+1. Parses your inventory file (or Ansible inventories)
+2. Launches an interactive fuzzy search over all hosts
+3. Prompts for the SSH username (defaults to the host's configured user)
+4. Opens the SSH session
 
+## Installation
 
-```
-	taq - fast SSH search and connect CLI
-	
-	Usage:
-	taq               # launch interactive search
-	taq --help,-h     # show this help message
-	taq --version,-v  # show version
+**From a release binary** — download the latest binary for your platform from the [Releases](../../releases) page.
 
-	Environment Variables:
-	TAQ_DEFAULT_USER   : Specifies default SSH username [$USER]
-	TAQ_ANSIBLE_INVS   : List of ansible projects inventories, (;) separated.  []
-	TAQ_INVENTORY_PATH : Inventory file path ["~/.config/taq/inventory.yaml"]
+**With Go:**
+```sh
+go install github.com/ubmagh/taq@latest
 ```
 
+**From source:**
+```sh
+git clone https://github.com/ubmagh/taq
+cd taq
+make install
+```
 
-## Todos 
+## Usage
 
-- default user + can override upon selection
-- add ansible inventories parsing
-- multiple files/sources ? 
-- better design ? 
-- nested groups ? 
-- support remote inventory (url, repo)
-- customized list styling ? 
+```
+taq               # launch interactive search
+taq --help,  -h   # show help
+taq --version,-v  # show version
+```
+
+**Keybindings:**
+```
+↑/↓       navigate the list
+Enter     select host / confirm username
+Esc       back / exit
+Ctrl+C    exit
+```
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `TAQ_INVENTORY_PATH` | `$HOME/.config/taq/inventory.yaml` | Path to inventory file |
+| `TAQ_DEFAULT_USER` | `$USER` | Default SSH username |
+| `TAQ_DEFAULT_SSH_KEY_PATH` | _(none)_ | Default SSH key path |
+| `TAQ_ANSIBLE_INVS` | _(none)_ | Semicolon-separated list of Ansible inventory paths |
+
+Paths support `$HOME` and other environment variable expansion.
+
+## Inventory file
+
+```yaml
+hosts:
+  - name: my-server
+    address: 192.168.1.10
+    user: ubuntu
+    port: 22
+    key_path: ~/.ssh/id_rsa
+
+groups:
+  production:
+    labels:
+      env: prod
+    hosts:
+      - name: web-01
+        address: 10.0.0.1
+        user: deploy
+```
+
+See `example-inventories/` for more examples.
+
+## Todos
+
+- Ansible inventory parsing
+- Multiple inventory sources ?
+- Nested groups ?
+- Remote inventory (URL, repository) ?
