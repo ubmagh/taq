@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"os"
@@ -10,10 +11,30 @@ import (
 	"github.com/ubmagh/taq/host"
 )
 
-func ParseInventoryFile() ([]host.Host, error) {
-	data, err := os.ReadFile(config.GetDefaultInventoryPath())
+func Parse() ([]host.Host, error) {
+	var all []host.Host
+
+	taqHosts, err := parseTaqFile(config.GetDefaultInventoryPath())
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	all = append(all, taqHosts...)
+
+	for _, dir := range config.GetAnsibleInventories() {
+		ansibleHosts, err := parseAnsibleDir(dir)
+		if err != nil {
+			return nil, fmt.Errorf("ansible inventory %q: %w", dir, err)
+		}
+		all = append(all, ansibleHosts...)
+	}
+
+	return applyDefaults(all), nil
+}
+
+func parseTaqFile(path string) ([]host.Host, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read inventory file: %w", err)
+		return nil, err
 	}
 
 	var inv host.Inventory
@@ -21,10 +42,8 @@ func ParseInventoryFile() ([]host.Host, error) {
 		return nil, err
 	}
 
-	var flattenedHosts []host.Host
-	defaultUser := config.GetDefaultUser()
-
-	flattenedHosts = append(flattenedHosts, inv.Hosts...)
+	var hosts []host.Host
+	hosts = append(hosts, inv.Hosts...)
 
 	for gk, g := range inv.Groups {
 		for _, h := range g.Hosts {
@@ -33,16 +52,30 @@ func ParseInventoryFile() ([]host.Host, error) {
 			maps.Copy(mergedLabels, h.Labels)
 			mergedLabels["groupName"] = gk
 			h.Labels = mergedLabels
-			flattenedHosts = append(flattenedHosts, h)
+			hosts = append(hosts, h)
 		}
 	}
 
-	for i := range flattenedHosts {
-		if flattenedHosts[i].User == "" {
-			flattenedHosts[i].User = defaultUser
+	return hosts, nil
+}
+
+func applyDefaults(hosts []host.Host) []host.Host {
+	defaultUser := config.GetDefaultUser()
+	seen := make(map[string]bool)
+	result := make([]host.Host, 0, len(hosts))
+
+	for _, h := range hosts {
+		key := h.Name + "|" + h.Address
+		if seen[key] {
+			continue
 		}
-		flattenedHosts[i].BuildSearchable()
+		seen[key] = true
+		if h.User == "" {
+			h.User = defaultUser
+		}
+		h.BuildSearchable()
+		result = append(result, h)
 	}
 
-	return flattenedHosts, nil
+	return result
 }

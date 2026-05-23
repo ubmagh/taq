@@ -11,7 +11,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sahilm/fuzzy"
+	"github.com/ubmagh/taq/config"
 	"github.com/ubmagh/taq/host"
+	"github.com/ubmagh/taq/ui"
 )
 
 type phase int
@@ -28,14 +30,19 @@ type SearchModel struct {
 	list         list.Model
 	hosts        []host.Host
 	selectedHost host.Host
+	width        int
+	height       int
+	compact      bool
 }
 
 var (
-	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
-	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
+	titleStyle          = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("99")).MarginLeft(2)
+	itemNameStyle       = lipgloss.NewStyle().PaddingLeft(4)
+	itemDetailStyle     = lipgloss.NewStyle().PaddingLeft(4).Faint(true)
+	selectedNameStyle   = lipgloss.NewStyle().PaddingLeft(2).Bold(true).Foreground(lipgloss.Color("170"))
+	selectedDetailStyle = lipgloss.NewStyle().PaddingLeft(2).Faint(true).Foreground(lipgloss.Color("170"))
+	paginationStyle     = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
+	helpStyle           = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
 )
 
 type item struct {
@@ -46,21 +53,56 @@ func (i item) Title() string       { return i.host.Name }
 func (i item) Description() string { return i.host.Address }
 func (i item) FilterValue() string { return i.host.HostListDisplay() }
 
-type itemDelegate struct{}
+func itemDetail(h host.Host) string {
+	parts := []string{h.Address}
+	if h.User != "" {
+		parts = append(parts, h.User)
+	}
+	if g := h.Labels["groups"]; g != "" {
+		parts = append(parts, g)
+	} else if g := h.Labels["groupName"]; g != "" {
+		parts = append(parts, g)
+	}
+	return strings.Join(parts, " · ")
+}
 
-func (d itemDelegate) Height() int                             { return 1 }
-func (d itemDelegate) Spacing() int                            { return 0 }
+type itemDelegate struct {
+	compact bool
+}
+
+func (d itemDelegate) Height() int {
+	if d.compact {
+		return 1
+	}
+	return 2
+}
+func (d itemDelegate) Spacing() int {
+	if d.compact {
+		return 0
+	}
+	return 1
+}
 func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i, ok := listItem.(item)
 	if !ok {
 		return
 	}
-
+	if d.compact {
+		if index == m.Index() {
+			fmt.Fprint(w, selectedNameStyle.Render("> "+i.host.HostListDisplay()))
+		} else {
+			fmt.Fprint(w, itemNameStyle.Render(i.host.HostListDisplay()))
+		}
+		return
+	}
+	detail := itemDetail(i.host)
 	if index == m.Index() {
-		fmt.Fprint(w, selectedItemStyle.Render("> "+i.host.HostListDisplay()))
+		fmt.Fprintln(w, selectedNameStyle.Render("> "+i.host.Name))
+		fmt.Fprint(w, selectedDetailStyle.Render("  "+detail))
 	} else {
-		fmt.Fprint(w, itemStyle.Render(i.host.HostListDisplay()))
+		fmt.Fprintln(w, itemNameStyle.Render(i.host.Name))
+		fmt.Fprint(w, itemDetailStyle.Render(detail))
 	}
 }
 
@@ -81,27 +123,50 @@ func (m *SearchModel) filterList() {
 		return
 	}
 
+	lq := strings.ToLower(query)
+
 	searchables := make([]string, len(m.hosts))
 	for i, h := range m.hosts {
 		searchables[i] = h.Searchable()
 	}
 
-	matches := fuzzy.Find(strings.ToLower(query), searchables)
+	matches := fuzzy.Find(lq, searchables)
 
+	seen := make(map[int]bool, len(matches))
 	filtered := make([]host.Host, 0, len(matches))
 	for _, match := range matches {
+		seen[match.Index] = true
 		filtered = append(filtered, m.hosts[match.Index])
 	}
+
+	// fuzzy handles names/groups well but struggles with IPs — supplement with address substring match
+	for i, h := range m.hosts {
+		if !seen[i] && strings.Contains(strings.ToLower(h.Address), lq) {
+			filtered = append(filtered, h)
+		}
+	}
+
 	m.list.SetItems(toListItems(filtered))
 }
 
 func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.list.SetSize(msg.Width, msg.Height-5)
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
+		case "tab":
+			if m.phase == phaseSearch {
+				m.compact = !m.compact
+				m.list.SetDelegate(itemDelegate{compact: m.compact})
+			}
+			return m, nil
 		case "esc":
 			if m.phase == phaseUser {
 				m.phase = phaseSearch
@@ -155,22 +220,21 @@ func (m SearchModel) View() string {
 		return fmt.Sprintf("SSH username for [%s]: %s\n%s", m.selectedHost.Name, m.userInput.View(), help)
 	}
 
-	help := lipgloss.NewStyle().
-		Faint(true).
-		Render("`↑/↓` navigate • `Enter` connect • `Esc/Ctrl+C` exit")
-
-	return fmt.Sprintf("Search by keywords: %s\n%s%s", m.input.View(), m.list.View(), help)
+	help := lipgloss.NewStyle().Faint(true).Render("`↑/↓` navigate • `Enter` connect • `Tab` toggle view • `Esc/Ctrl+C` exit")
+	return fmt.Sprintf("Search: %s\n%s%s", m.input.View(), m.list.View(), help)
 }
 
 func NewSearcher(hosts []host.Host) SearchModel {
 	items := toListItems(hosts)
+
 	ti := textinput.New()
 	ti.Placeholder = "Type to search..."
 	ti.Width = 30
 	ti.CharLimit = 200
 	ti.Focus()
 
-	l := list.New(items, itemDelegate{}, 0, 10)
+	compact := config.IsCompactMode()
+	l := list.New(items, itemDelegate{compact: compact}, 0, 20)
 	l.SetShowHelp(false)
 	l.SetShowTitle(true)
 	l.SetShowStatusBar(false)
@@ -180,16 +244,17 @@ func NewSearcher(hosts []host.Host) SearchModel {
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
 
-	ui := textinput.New()
-	ui.Width = 30
-	ui.CharLimit = 100
+	uInput := textinput.New()
+	uInput.Width = 30
+	uInput.CharLimit = 100
 
 	return SearchModel{
 		phase:     phaseSearch,
 		input:     ti,
-		userInput: ui,
+		userInput: uInput,
 		list:      l,
 		hosts:     hosts,
+		compact:   compact,
 	}
 }
 
@@ -197,7 +262,7 @@ func RunSearcher(hosts []host.Host) (host.Host, bool) {
 	p := tea.NewProgram(NewSearcher(hosts))
 	model, err := p.Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		ui.Error("%v", err)
 		os.Exit(1)
 	}
 	if sm, ok := model.(SearchModel); ok && sm.selectedHost.Address != "" {

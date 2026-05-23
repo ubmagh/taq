@@ -48,9 +48,16 @@ Ctrl+C    exit
 | `TAQ_INVENTORY_PATH` | `$HOME/.config/taq/inventory.yaml` | Path to inventory file |
 | `TAQ_DEFAULT_USER` | `$USER` | Default SSH username |
 | `TAQ_DEFAULT_SSH_KEY_PATH` | _(none)_ | Default SSH key path |
-| `TAQ_ANSIBLE_INVS` | _(none)_ | Semicolon-separated list of Ansible inventory paths |
+| `TAQ_ANSIBLE_INVS` | _(none)_ | Semicolon-separated list of Ansible project inventory **directories** |
+| `TAQ_DISPLAY_MODE` | `detailed` | List display mode: `detailed` or `compact` |
 
 Paths support `$HOME` and other environment variable expansion.
+
+`TAQ_ANSIBLE_INVS` expects directories, not files. taq walks each directory for `.yaml`/`.yml` files (skipping `group_vars`, `host_vars`, and other subdirectories). Multiple directories are separated by `;`:
+
+```sh
+export TAQ_ANSIBLE_INVS="~/projects/infra/inventory;~/projects/app/inventory"
+```
 
 ## Inventory file
 
@@ -76,7 +83,6 @@ See `example-inventories/` for more examples.
 
 ## Todos
 
-- Ansible inventory parsing
 - Multiple inventory sources ?
 - Nested groups ?
 - Remote inventory (URL, repository) ?
