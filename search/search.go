@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sahilm/fuzzy"
+	"github.com/ubmagh/taq/config"
 	"github.com/ubmagh/taq/host"
 	"github.com/ubmagh/taq/ui"
 )
@@ -31,6 +32,7 @@ type SearchModel struct {
 	selectedHost host.Host
 	width        int
 	height       int
+	compact      bool
 }
 
 var (
@@ -64,14 +66,34 @@ func itemDetail(h host.Host) string {
 	return strings.Join(parts, " · ")
 }
 
-type itemDelegate struct{}
+type itemDelegate struct {
+	compact bool
+}
 
-func (d itemDelegate) Height() int                             { return 2 }
-func (d itemDelegate) Spacing() int                            { return 1 }
+func (d itemDelegate) Height() int {
+	if d.compact {
+		return 1
+	}
+	return 2
+}
+func (d itemDelegate) Spacing() int {
+	if d.compact {
+		return 0
+	}
+	return 1
+}
 func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i, ok := listItem.(item)
 	if !ok {
+		return
+	}
+	if d.compact {
+		if index == m.Index() {
+			fmt.Fprint(w, selectedNameStyle.Render("> "+i.host.HostListDisplay()))
+		} else {
+			fmt.Fprint(w, itemNameStyle.Render(i.host.HostListDisplay()))
+		}
 		return
 	}
 	detail := itemDetail(i.host)
@@ -139,6 +161,12 @@ func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
+		case "tab":
+			if m.phase == phaseSearch {
+				m.compact = !m.compact
+				m.list.SetDelegate(itemDelegate{compact: m.compact})
+			}
+			return m, nil
 		case "esc":
 			if m.phase == phaseUser {
 				m.phase = phaseSearch
@@ -192,7 +220,7 @@ func (m SearchModel) View() string {
 		return fmt.Sprintf("SSH username for [%s]: %s\n%s", m.selectedHost.Name, m.userInput.View(), help)
 	}
 
-	help := lipgloss.NewStyle().Faint(true).Render("`↑/↓` navigate • `Enter` connect • `Esc/Ctrl+C` exit")
+	help := lipgloss.NewStyle().Faint(true).Render("`↑/↓` navigate • `Enter` connect • `Tab` toggle view • `Esc/Ctrl+C` exit")
 	return fmt.Sprintf("Search: %s\n%s%s", m.input.View(), m.list.View(), help)
 }
 
@@ -205,7 +233,8 @@ func NewSearcher(hosts []host.Host) SearchModel {
 	ti.CharLimit = 200
 	ti.Focus()
 
-	l := list.New(items, itemDelegate{}, 0, 20)
+	compact := config.IsCompactMode()
+	l := list.New(items, itemDelegate{compact: compact}, 0, 20)
 	l.SetShowHelp(false)
 	l.SetShowTitle(true)
 	l.SetShowStatusBar(false)
@@ -225,6 +254,7 @@ func NewSearcher(hosts []host.Host) SearchModel {
 		userInput: uInput,
 		list:      l,
 		hosts:     hosts,
+		compact:   compact,
 	}
 }
 

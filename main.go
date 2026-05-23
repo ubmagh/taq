@@ -28,6 +28,7 @@ func printHelp() {
 	TAQ_DEFAULT_SSH_KEY_PATH : Default SSH key path. []
 	TAQ_ANSIBLE_INVS         : List of ansible projects inventories, (;) separated.  []
 	TAQ_INVENTORY_PATH       : Inventory file path ["~/.config/taq/inventory.yaml"]
+	TAQ_DISPLAY_MODE         : List display mode: "detailed" (default) or "compact"
 `)
 }
 

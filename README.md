@@ -49,6 +49,7 @@ Ctrl+C    exit
 | `TAQ_DEFAULT_USER` | `$USER` | Default SSH username |
 | `TAQ_DEFAULT_SSH_KEY_PATH` | _(none)_ | Default SSH key path |
 | `TAQ_ANSIBLE_INVS` | _(none)_ | Semicolon-separated list of Ansible project inventory **directories** |
+| `TAQ_DISPLAY_MODE` | `detailed` | List display mode: `detailed` or `compact` |
 
 Paths support `$HOME` and other environment variable expansion.
 
@@ -82,7 +83,6 @@ See `example-inventories/` for more examples.
 
 ## Todos
 
-- Configurable display mode (compact vs detailed list)
 - Multiple inventory sources ?
 - Nested groups ?
 - Remote inventory (URL, repository) ?

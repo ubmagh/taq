@@ -12,7 +12,12 @@ const (
 	envDefaultUser   = "TAQ_DEFAULT_USER"
 	envAnsibleInvs   = "TAQ_ANSIBLE_INVS"
 	envSshKeyPath    = "TAQ_DEFAULT_SSH_KEY_PATH"
+	envDisplayMode   = "TAQ_DISPLAY_MODE"
 )
+
+func IsCompactMode() bool {
+	return os.Getenv(envDisplayMode) == "compact"
+}
 
 func GetDefaultInventoryPath() string {
 	path := os.Getenv(envInventoryPath)
