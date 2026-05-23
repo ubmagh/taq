@@ -83,6 +83,6 @@ See `example-inventories/` for more examples.
 
 ## Todos
 
-- Multiple inventory sources ?
-- Nested groups ?
+- Multiple taq-inventory sources ?
+- Nested groups on taq-inventory ?
 - Remote inventory (URL, repository) ?
