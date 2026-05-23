@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -17,7 +18,7 @@ type ansibleGroup struct {
 	Vars     ansibleVars             `yaml:"vars"`
 }
 
-type ansibleVars map[string]interface{}
+type ansibleVars map[string]any
 
 func (v ansibleVars) str(key string) string {
 	if v == nil {
@@ -82,12 +83,8 @@ func parseAnsibleFile(path string) ([]host.Host, error) {
 func flattenAnsibleGroup(name string, group ansibleGroup, inheritedVars ansibleVars, parentGroups []string) []host.Host {
 	// merge: inherited < group vars (group overrides inherited)
 	groupVars := make(ansibleVars)
-	for k, v := range inheritedVars {
-		groupVars[k] = v
-	}
-	for k, v := range group.Vars {
-		groupVars[k] = v
-	}
+	maps.Copy(groupVars, inheritedVars)
+	maps.Copy(groupVars, group.Vars)
 
 	// copy parent groups and append current (exclude "all")
 	groups := make([]string, len(parentGroups))
@@ -101,12 +98,8 @@ func flattenAnsibleGroup(name string, group ansibleGroup, inheritedVars ansibleV
 	for hostname, hostVars := range group.Hosts {
 		// merge: group vars < host vars (host overrides group)
 		effective := make(ansibleVars)
-		for k, v := range groupVars {
-			effective[k] = v
-		}
-		for k, v := range hostVars {
-			effective[k] = v
-		}
+		maps.Copy(effective, groupVars)
+		maps.Copy(effective, hostVars)
 
 		address := effective.str("ansible_host")
 		if address == "" {

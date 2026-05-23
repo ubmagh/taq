@@ -14,13 +14,13 @@ var (
 )
 
 func Error(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, "%s %s\n", errorPrefix, fmt.Sprintf(format, args...))
+	fmt.Fprintln(os.Stderr, errorPrefix, fmt.Sprintf(format, args...))
 }
 
 func Warn(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, "%s %s\n", warnPrefix, fmt.Sprintf(format, args...))
+	fmt.Fprintln(os.Stderr, warnPrefix, fmt.Sprintf(format, args...))
 }
 
 func Info(format string, args ...any) {
-	fmt.Fprintf(os.Stdout, "%s %s\n", infoPrefix, fmt.Sprintf(format, args...))
+	fmt.Fprintln(os.Stdout, infoPrefix, fmt.Sprintf(format, args...))
 }
