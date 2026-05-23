@@ -3,6 +3,7 @@ package search
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -36,7 +37,6 @@ var (
 	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
 	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
 	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
 
 type item struct {
@@ -59,19 +59,17 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		return
 	}
 
-	str := fmt.Sprintf("%d. %s", index+1, i)
-
-	fn := func(s ...string) string {
+	fn := func() string {
 		return itemStyle.Render(i.host.HostListDisplay())
 	}
 
 	if index == m.Index() {
-		fn = func(s ...string) string {
+		fn = func() string {
 			return selectedItemStyle.Render("> " + i.host.HostListDisplay())
 		}
 	}
 
-	fmt.Fprint(w, fn(str))
+	fmt.Fprint(w, fn())
 }
 
 func (m SearchModel) Init() tea.Cmd { return textinput.Blink }
@@ -162,7 +160,7 @@ func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m SearchModel) View() string {
 	if m.phase == phaseUser {
 		help := lipgloss.NewStyle().Faint(true).Render("`Enter` confirm • `Esc` back")
-		return fmt.Sprintf("SSH username for %s: %s\n%s", m.selectedHost.Name, m.userInput.View(), help)
+		return fmt.Sprintf("SSH username for [%s]: %s\n%s", m.selectedHost.Name, m.userInput.View(), help)
 	}
 
 	help := lipgloss.NewStyle().
@@ -208,7 +206,8 @@ func RunSearcher(hosts []types.Host) {
 	p := tea.NewProgram(NewSearcher(hosts))
 	model, err := p.Run()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
 	}
 	if sm, ok := model.(SearchModel); ok && sm.selectedHost.Address != "" {
 		ssh.OpenSSHSession(sm.selectedHost)

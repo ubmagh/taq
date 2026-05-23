@@ -38,7 +38,7 @@ func (h Host) HostListDisplay() string {
 
 func (h Host) GetSshCommand() []string {
 	args := []string{}
-	if len(h.KeyPath) == 0 {
+	if len(h.KeyPath) > 0 {
 		args = append(args, fmt.Sprintf("-i \"%s\"", h.KeyPath))
 	} else {
 		defaultKey := config.GetDefaultSshKeyPath()
