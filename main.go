@@ -21,6 +21,14 @@ func init() {
 	}
 }
 
+func init() {
+	if version == "dev" {
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+			version = info.Main.Version
+		}
+	}
+}
+
 const repoURL = "https://github.com/ubmagh/taq"
 
 func printHelp() {
