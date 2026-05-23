@@ -41,12 +41,7 @@ func main() {
 		}
 	}
 
-	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
-		fmt.Println("taq", Version)
-		return
-	}
-
-	inventory_hosts, err := parser.ParseInventoryFile(nil)
+	inventory_hosts, err := parser.ParseInventoryFile()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)

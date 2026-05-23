@@ -41,7 +41,6 @@ var (
 
 type item struct {
 	host types.Host
-	desc string
 }
 
 func (i item) Title() string       { return i.host.Name }
@@ -77,7 +76,7 @@ func (m SearchModel) Init() tea.Cmd { return textinput.Blink }
 func toListItems(hosts []types.Host) []list.Item {
 	items := []list.Item{}
 	for _, h := range hosts {
-		items = append(items, item{host: h, desc: h.HostListDisplay()})
+		items = append(items, item{host: h})
 	}
 	return items
 }

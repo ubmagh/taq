@@ -33,7 +33,7 @@ func (h *Host) BuildSearchable() {
 }
 
 func (h Host) HostListDisplay() string {
-	return fmt.Sprintf("%s (%s @ %s)\n", h.Name, h.User, h.Address)
+	return fmt.Sprintf("%s (%s @ %s)", h.Name, h.User, h.Address)
 }
 
 func (h Host) GetSshCommand() []string {

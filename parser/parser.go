@@ -9,7 +9,7 @@ import (
 	"github.com/ubmagh/taq/types"
 )
 
-func ParseInventoryFile(out interface{}) ([]types.Host, error) {
+func ParseInventoryFile() ([]types.Host, error) {
 	data, err := os.ReadFile(config.GetDefaultInventoryPath())
 	if err != nil {
 		return nil, fmt.Errorf("[Err] failed to read inventory file: %w", err)
