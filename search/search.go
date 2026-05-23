@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sahilm/fuzzy"
 	"github.com/ubmagh/taq/ssh"
 	"github.com/ubmagh/taq/types"
 )
@@ -43,8 +44,8 @@ type item struct {
 	desc string
 }
 
-func (i item) Title() string       { return string("title") }
-func (i item) Description() string { return string("desc") }
+func (i item) Title() string       { return i.host.Name }
+func (i item) Description() string { return i.host.Address }
 func (i item) FilterValue() string { return string(i.host.HostListDisplay()) }
 
 type itemDelegate struct{}
@@ -84,32 +85,22 @@ func toListItems(hosts []types.Host) []list.Item {
 }
 
 func (m *SearchModel) filterList() {
-	query := strings.TrimSpace(strings.ToLower(m.input.Value()))
+	query := strings.TrimSpace(m.input.Value())
 	if query == "" {
 		m.list.SetItems(toListItems(m.hosts))
 		return
 	}
 
-	keywords := strings.FieldsFunc(query, func(r rune) bool {
-		return r == ' ' || r == ','
-	})
-
-	for i := range keywords {
-		keywords[i] = strings.ToLower(strings.TrimSpace(keywords[i]))
+	searchables := make([]string, len(m.hosts))
+	for i, h := range m.hosts {
+		searchables[i] = h.SearchableString
 	}
-	filtered := []types.Host{}
 
-	for _, h := range m.hosts {
-		ok := true
-		for _, kw := range keywords {
-			if !strings.Contains(h.SearchableString, kw) {
-				ok = false
-				break
-			}
-		}
-		if ok {
-			filtered = append(filtered, h)
-		}
+	matches := fuzzy.Find(strings.ToLower(query), searchables)
+
+	filtered := make([]types.Host, 0, len(matches))
+	for _, match := range matches {
+		filtered = append(filtered, m.hosts[match.Index])
 	}
 	m.list.SetItems(toListItems(filtered))
 }

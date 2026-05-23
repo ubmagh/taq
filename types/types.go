@@ -38,11 +38,14 @@ func (h Host) HostListDisplay() string {
 
 func (h Host) GetSshCommand() []string {
 	args := []string{}
-	keyPath := h.KeyPath
-	if len(keyPath) == 0 {
-		keyPath = config.GetDefaultSshKeyPath()
+	if len(h.KeyPath) == 0 {
+		args = append(args, fmt.Sprintf("-i \"%s\"", h.KeyPath))
+	} else {
+		defaultKey := config.GetDefaultSshKeyPath()
+		if len(defaultKey) > 0 {
+			args = append(args, fmt.Sprintf("-i \"%s\"", defaultKey))
+		}
 	}
-	args = append(args, fmt.Sprintf("-i \"%s\"", keyPath))
 	if len(h.Port) > 0 {
 		args = append(args, fmt.Sprintf("-p %s", strings.TrimSpace(h.Port)))
 	}
