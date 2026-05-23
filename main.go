@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/ubmagh/taq/parser"
 	"github.com/ubmagh/taq/search"
@@ -11,6 +12,14 @@ import (
 )
 
 var version = "dev"
+
+func init() {
+	if version == "dev" {
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+			version = info.Main.Version
+		}
+	}
+}
 
 const repoURL = "https://github.com/ubmagh/taq"
 
