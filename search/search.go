@@ -13,8 +13,17 @@ import (
 	"github.com/ubmagh/taq/types"
 )
 
+type phase int
+
+const (
+	phaseSearch phase = iota
+	phaseUser
+)
+
 type SearchModel struct {
+	phase        phase
 	input        textinput.Model
+	userInput    textinput.Model
 	list         list.Model
 	hosts        []types.Host
 	selectedHost types.Host
@@ -107,36 +116,64 @@ func (m *SearchModel) filterList() {
 
 func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	// var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
+		case "ctrl+c":
+			return m, tea.Quit
+		case "esc":
+			if m.phase == phaseUser {
+				m.phase = phaseSearch
+				m.userInput.Blur()
+				m.input.Focus()
+				return m, nil
+			}
 			return m, tea.Quit
 		case "down":
-			m.list.CursorDown()
+			if m.phase == phaseSearch {
+				m.list.CursorDown()
+			}
 			return m, nil
 		case "up":
-			m.list.CursorUp()
+			if m.phase == phaseSearch {
+				m.list.CursorUp()
+			}
 			return m, nil
 		case "enter":
-			if selected, ok := m.list.SelectedItem().(item); ok {
-				m.selectedHost = selected.host
-				return m, tea.Sequence(
-					tea.ClearScreen,
-					tea.Quit,
-				)
+			if m.phase == phaseSearch {
+				if selected, ok := m.list.SelectedItem().(item); ok {
+					m.selectedHost = selected.host
+					m.phase = phaseUser
+					m.input.Blur()
+					m.userInput.SetValue("")
+					m.userInput.Placeholder = m.selectedHost.User
+					return m, m.userInput.Focus()
+				}
+			} else {
+				user := strings.TrimSpace(m.userInput.Value())
+				if user != "" {
+					m.selectedHost.User = user
+				}
+				return m, tea.Sequence(tea.ClearScreen, tea.Quit)
 			}
 		}
-
 	}
 
-	m.input, cmd = m.input.Update(msg)
-	m.filterList()
+	if m.phase == phaseSearch {
+		m.input, cmd = m.input.Update(msg)
+		m.filterList()
+	} else {
+		m.userInput, cmd = m.userInput.Update(msg)
+	}
 	return m, cmd
 }
 
 func (m SearchModel) View() string {
+	if m.phase == phaseUser {
+		help := lipgloss.NewStyle().Faint(true).Render("`Enter` confirm • `Esc` back")
+		return fmt.Sprintf("SSH username for %s: %s\n%s", m.selectedHost.Name, m.userInput.View(), help)
+	}
+
 	help := lipgloss.NewStyle().
 		Faint(true).
 		Render("`↑/↓` navigate • `Enter` connect • `Esc/Ctrl+C` exit")
@@ -163,7 +200,17 @@ func NewSearcher(hosts []types.Host) SearchModel {
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
 
-	return SearchModel{ti, l, hosts, types.Host{}}
+	ui := textinput.New()
+	ui.Width = 30
+	ui.CharLimit = 100
+
+	return SearchModel{
+		phase:     phaseSearch,
+		input:     ti,
+		userInput: ui,
+		list:      l,
+		hosts:     hosts,
+	}
 }
 
 func RunSearcher(hosts []types.Host) {
