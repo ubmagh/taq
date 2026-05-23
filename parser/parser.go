@@ -21,7 +21,7 @@ func ParseInventoryFile(out interface{}) ([]types.Host, error) {
 	}
 
 	var flattened_hosts []types.Host
-	currentUser := os.Getenv("USER")
+	defaultUser := config.GetDefaultUser()
 
 	// top level hosts
 	for _, h := range inv.Hosts {
@@ -46,7 +46,7 @@ func ParseInventoryFile(out interface{}) ([]types.Host, error) {
 
 	for i := range flattened_hosts {
 		if flattened_hosts[i].User == "" {
-			flattened_hosts[i].User = currentUser
+			flattened_hosts[i].User = defaultUser
 		}
 		flattened_hosts[i].BuildSearchable()
 	}

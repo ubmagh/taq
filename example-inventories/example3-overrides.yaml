@@ -12,4 +12,7 @@ groups:
         labels:
           region: us-west   # override
           env: staging
+      - name: demo
+        user: root 
+        address: lb-test.lon1.ibm.youcancorp.com
 
