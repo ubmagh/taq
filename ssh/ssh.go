@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/ubmagh/taq/config"
-	"github.com/ubmagh/taq/types"
+	"github.com/ubmagh/taq/host"
 )
 
-func sshArgs(h types.Host) []string {
+func sshArgs(h host.Host) []string {
 	args := []string{}
 	keyPath := h.KeyPath
 	if keyPath == "" {
@@ -26,7 +26,7 @@ func sshArgs(h types.Host) []string {
 	return args
 }
 
-func OpenSSHSession(h types.Host) {
+func OpenSSHSession(h host.Host) {
 	if h.Address == "" {
 		fmt.Println("⚠️  No address found for host.")
 		return

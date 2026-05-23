@@ -6,21 +6,21 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/ubmagh/taq/config"
-	"github.com/ubmagh/taq/types"
+	"github.com/ubmagh/taq/host"
 )
 
-func ParseInventoryFile() ([]types.Host, error) {
+func ParseInventoryFile() ([]host.Host, error) {
 	data, err := os.ReadFile(config.GetDefaultInventoryPath())
 	if err != nil {
 		return nil, fmt.Errorf("[Err] failed to read inventory file: %w", err)
 	}
 
-	var inv types.Inventory
+	var inv host.Inventory
 	if err := yaml.Unmarshal(data, &inv); err != nil {
 		return nil, err
 	}
 
-	var flattened_hosts []types.Host
+	var flattened_hosts []host.Host
 	defaultUser := config.GetDefaultUser()
 
 	// top level hosts

@@ -10,9 +10,9 @@ import (
 )
 
 func printHelp() {
-	fmt.Println(`
+	fmt.Print(`
 	taq - fast SSH search and connect CLI
-	
+
 	Usage:
 	taq               # launch interactive search
 	taq --help,-h     # show this help message

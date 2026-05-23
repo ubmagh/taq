@@ -11,7 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sahilm/fuzzy"
-	"github.com/ubmagh/taq/types"
+	"github.com/ubmagh/taq/host"
 )
 
 type phase int
@@ -26,8 +26,8 @@ type SearchModel struct {
 	input        textinput.Model
 	userInput    textinput.Model
 	list         list.Model
-	hosts        []types.Host
-	selectedHost types.Host
+	hosts        []host.Host
+	selectedHost host.Host
 }
 
 var (
@@ -39,7 +39,7 @@ var (
 )
 
 type item struct {
-	host types.Host
+	host host.Host
 }
 
 func (i item) Title() string       { return i.host.Name }
@@ -72,7 +72,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 func (m SearchModel) Init() tea.Cmd { return textinput.Blink }
 
-func toListItems(hosts []types.Host) []list.Item {
+func toListItems(hosts []host.Host) []list.Item {
 	items := []list.Item{}
 	for _, h := range hosts {
 		items = append(items, item{host: h})
@@ -94,7 +94,7 @@ func (m *SearchModel) filterList() {
 
 	matches := fuzzy.Find(strings.ToLower(query), searchables)
 
-	filtered := make([]types.Host, 0, len(matches))
+	filtered := make([]host.Host, 0, len(matches))
 	for _, match := range matches {
 		filtered = append(filtered, m.hosts[match.Index])
 	}
@@ -168,7 +168,7 @@ func (m SearchModel) View() string {
 	return fmt.Sprintf("Search by keywords: %s\n%s%s", m.input.View(), m.list.View(), help)
 }
 
-func NewSearcher(hosts []types.Host) SearchModel {
+func NewSearcher(hosts []host.Host) SearchModel {
 	items := toListItems(hosts)
 	ti := textinput.New()
 	ti.PlaceholderStyle.Blink(true).Width(1)
@@ -200,7 +200,7 @@ func NewSearcher(hosts []types.Host) SearchModel {
 	}
 }
 
-func RunSearcher(hosts []types.Host) (types.Host, bool) {
+func RunSearcher(hosts []host.Host) (host.Host, bool) {
 	p := tea.NewProgram(NewSearcher(hosts))
 	model, err := p.Run()
 	if err != nil {
@@ -210,5 +210,5 @@ func RunSearcher(hosts []types.Host) (types.Host, bool) {
 	if sm, ok := model.(SearchModel); ok && sm.selectedHost.Address != "" {
 		return sm.selectedHost, true
 	}
-	return types.Host{}, false
+	return host.Host{}, false
 }
