@@ -17,10 +17,10 @@ func sshArgs(h host.Host) []string {
 		keyPath = config.GetDefaultSshKeyPath()
 	}
 	if keyPath != "" {
-		args = append(args, fmt.Sprintf("-i \"%s\"", keyPath))
+		args = append(args, "-i", keyPath)
 	}
 	if h.Port != "" {
-		args = append(args, fmt.Sprintf("-p %s", strings.TrimSpace(h.Port)))
+		args = append(args, "-p", strings.TrimSpace(h.Port))
 	}
 	args = append(args, fmt.Sprintf("%s@%s", h.User, h.Address))
 	return args

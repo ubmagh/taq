@@ -26,15 +26,13 @@ func printHelp() {
 `)
 }
 
+var version = "dev"
+
 func main() {
-	const Version = "v1.0.0"
-
 	if len(os.Args) > 1 {
-		arg := os.Args[1]
-
-		switch arg {
+		switch os.Args[1] {
 		case "--version", "-v":
-			fmt.Println("taq", Version)
+			fmt.Println("taq", version)
 			return
 		case "--help", "-h":
 			printHelp()
@@ -42,15 +40,13 @@ func main() {
 		}
 	}
 
-	inventory_hosts, err := parser.ParseInventoryFile()
+	inventoryHosts, err := parser.ParseInventoryFile()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	if host, ok := search.RunSearcher(inventory_hosts); ok {
-		ssh.OpenSSHSession(host)
+	if h, ok := search.RunSearcher(inventoryHosts); ok {
+		ssh.OpenSSHSession(h)
 	}
-
-	os.Exit(0)
 }

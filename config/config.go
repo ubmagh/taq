@@ -5,10 +5,16 @@ import (
 	"strings"
 )
 
-const defaultInventoryPath = "~/.config/taq/inventory.yaml"
+const (
+	defaultInventoryPath = "~/.config/taq/inventory.yaml"
+
+	envInventoryPath = "TAQ_INVENTORY_PATH"
+	envDefaultUser   = "TAQ_DEFAULT_USER"
+	envAnsibleInvs   = "TAQ_ANSIBLE_INVS"
+	envSshKeyPath    = "TAQ_DEFAULT_SSH_KEY_PATH"
+)
 
 func GetDefaultInventoryPath() string {
-	const envInventoryPath = "TAQ_INVENTORY_PATH"
 	if path := os.Getenv(envInventoryPath); path != "" {
 		return path
 	}
@@ -16,7 +22,6 @@ func GetDefaultInventoryPath() string {
 }
 
 func GetDefaultUser() string {
-	const envDefaultUser = "TAQ_DEFAULT_USER"
 	if user := os.Getenv(envDefaultUser); user != "" {
 		return user
 	}
@@ -24,13 +29,12 @@ func GetDefaultUser() string {
 }
 
 func GetAnsibleInventories() []string {
-	const envAnsibleInvs = "TAQ_ANSIBLE_INVS"
-	if inventoriesStr := os.Getenv(envAnsibleInvs); inventoriesStr != "" {
-		return strings.Split(inventoriesStr, ";")
+	if v := os.Getenv(envAnsibleInvs); v != "" {
+		return strings.Split(v, ";")
 	}
-	return []string{}
+	return nil
 }
 
 func GetDefaultSshKeyPath() string {
-	return os.Getenv("TAQ_DEFAULT_SSH_KEY_PATH")
+	return os.Getenv(envSshKeyPath)
 }

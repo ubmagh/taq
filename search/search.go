@@ -89,7 +89,7 @@ func (m *SearchModel) filterList() {
 
 	searchables := make([]string, len(m.hosts))
 	for i, h := range m.hosts {
-		searchables[i] = h.SearchableString
+		searchables[i] = h.Searchable()
 	}
 
 	matches := fuzzy.Find(strings.ToLower(query), searchables)

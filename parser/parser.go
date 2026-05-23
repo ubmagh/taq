@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"maps"
 	"os"
 
 	"github.com/goccy/go-yaml"
@@ -20,36 +21,30 @@ func ParseInventoryFile() ([]host.Host, error) {
 		return nil, err
 	}
 
-	var flattened_hosts []host.Host
+	var flattenedHosts []host.Host
 	defaultUser := config.GetDefaultUser()
 
-	// top level hosts
 	for _, h := range inv.Hosts {
-		flattened_hosts = append(flattened_hosts, h)
+		flattenedHosts = append(flattenedHosts, h)
 	}
 
-	// hosts in groups
 	for gk, g := range inv.Groups {
 		for _, h := range g.Hosts {
 			mergedLabels := make(map[string]string)
-			for k, v := range g.Labels {
-				mergedLabels[k] = v
-			}
-			for k, v := range h.Labels {
-				mergedLabels[k] = v
-			}
+			maps.Copy(mergedLabels, g.Labels)
+			maps.Copy(mergedLabels, h.Labels)
 			mergedLabels["groupName"] = gk
 			h.Labels = mergedLabels
-			flattened_hosts = append(flattened_hosts, h)
+			flattenedHosts = append(flattenedHosts, h)
 		}
 	}
 
-	for i := range flattened_hosts {
-		if flattened_hosts[i].User == "" {
-			flattened_hosts[i].User = defaultUser
+	for i := range flattenedHosts {
+		if flattenedHosts[i].User == "" {
+			flattenedHosts[i].User = defaultUser
 		}
-		flattened_hosts[i].BuildSearchable()
+		flattenedHosts[i].BuildSearchable()
 	}
 
-	return flattened_hosts, nil
+	return flattenedHosts, nil
 }

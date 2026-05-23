@@ -12,7 +12,7 @@ type Host struct {
 	KeyPath          string            `yaml:"key_path,omitempty"`
 	Labels           map[string]string `yaml:"labels,omitempty"`
 	Port             string            `yaml:"port,omitempty"`
-	SearchableString string
+	searchable string
 }
 
 func (h *Host) BuildSearchable() {
@@ -27,13 +27,14 @@ func (h *Host) BuildSearchable() {
 		sb.WriteString(v)
 		sb.WriteByte(' ')
 	}
-	h.SearchableString = strings.ToLower(sb.String())
+	h.searchable = strings.ToLower(sb.String())
 }
+
+func (h Host) Searchable() string { return h.searchable }
 
 func (h Host) HostListDisplay() string {
 	return fmt.Sprintf("%s (%s @ %s)", h.Name, h.User, h.Address)
 }
-
 
 type Group struct {
 	Labels map[string]string `yaml:"labels,omitempty"`
