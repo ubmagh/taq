@@ -28,17 +28,19 @@ func printHelp() {
 	taq - fast SSH search and connect CLI
 
 	Usage:
-	taq               # launch interactive search
-	taq --help,    -h # show this help message
-	taq --version, -v # show version
-	taq --validate    # parse inventories and report host count, then exit
-	taq --debug,   -d # enable verbose output (combine with --validate or normal run)
+	taq                          # launch interactive SSH search
+	taq -l, --local-forward      # launch in local port-forward mode (-L)
+	taq -r, --remote-forward     # launch in remote/reverse port-forward mode (-R)
+	taq --validate               # parse inventories, report host count, then exit
+	taq --debug,   -d            # enable verbose output (combine with any flag)
+	taq --version, -v            # show version
+	taq --help,    -h            # show this help message
 
 	Environment Variables:
-	TAQ_DEFAULT_USER         : Specifies default SSH username [$USER]
+	TAQ_DEFAULT_USER         : Default SSH username [$USER]
 	TAQ_DEFAULT_SSH_KEY_PATH : Default SSH key path []
-	TAQ_ANSIBLE_INVS         : Semicolon-separated list of Ansible inventory root directories (e.g. inventories/) []
-	TAQ_INVENTORY_PATH       : Inventory file path ["~/.config/taq/inventory.yaml"]
+	TAQ_ANSIBLE_INVS         : Semicolon-separated list of Ansible inventory root directories []
+	TAQ_INVENTORY_PATH       : Inventory file path [$HOME/.config/taq/inventory.yaml]
 	TAQ_DISPLAY_MODE         : List display mode: "detailed" (default) or "compact"
 	TAQ_SSH_TIMEOUT          : SSH connect timeout in seconds (e.g. 5) []
 	TAQ_DEBUG                : Set to any value to enable debug/verbose output []
@@ -47,6 +49,7 @@ func printHelp() {
 
 func main() {
 	var debugMode, validateMode bool
+	forwardMode := search.KindSSH
 
 	for _, arg := range os.Args[1:] {
 		switch arg {
@@ -60,6 +63,10 @@ func main() {
 			debugMode = true
 		case "--validate":
 			validateMode = true
+		case "-l", "--local-forward":
+			forwardMode = search.KindLocalForward
+		case "-r", "--remote-forward":
+			forwardMode = search.KindRemoteForward
 		default:
 			fmt.Fprintf(os.Stderr, "unknown flag: %s\n", arg)
 			os.Exit(1)
@@ -90,7 +97,14 @@ func main() {
 		os.Exit(0)
 	}
 
-	if h, ok := search.RunSearcher(inventoryHosts); ok {
-		ssh.OpenSSHSession(h)
+	if result, ok := search.RunSearcher(inventoryHosts, forwardMode); ok {
+		switch result.Kind {
+		case search.KindSSH:
+			ssh.OpenSSHSession(result.Host)
+		case search.KindLocalForward:
+			ssh.OpenPortForwardSession(result.Host, "-L", result.Rules)
+		case search.KindRemoteForward:
+			ssh.OpenPortForwardSession(result.Host, "-R", result.Rules)
+		}
 	}
 }
