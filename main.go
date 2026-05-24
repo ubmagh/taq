@@ -13,7 +13,7 @@ import (
 	"github.com/ubmagh/taq/ui"
 )
 
-var version = "main"
+var version = "dev"
 
 func init() {
 	if version == "dev" {
