@@ -29,6 +29,7 @@ type SearchModel struct {
 	userInput    textinput.Model
 	list         list.Model
 	hosts        []host.Host
+	searchables  []string // pre-computed parallel to hosts; never rebuilt after init
 	selectedHost host.Host
 	width        int
 	height       int
@@ -125,12 +126,7 @@ func (m *SearchModel) filterList() {
 
 	lq := strings.ToLower(query)
 
-	searchables := make([]string, len(m.hosts))
-	for i, h := range m.hosts {
-		searchables[i] = h.Searchable()
-	}
-
-	matches := fuzzy.Find(lq, searchables)
+	matches := fuzzy.Find(lq, m.searchables)
 
 	seen := make(map[int]bool, len(matches))
 	filtered := make([]host.Host, 0, len(matches))
@@ -227,6 +223,12 @@ func (m SearchModel) View() string {
 func NewSearcher(hosts []host.Host) SearchModel {
 	items := toListItems(hosts)
 
+	// Pre-compute searchable strings once; filterList reuses this slice on every keystroke.
+	searchables := make([]string, len(hosts))
+	for i, h := range hosts {
+		searchables[i] = h.Searchable()
+	}
+
 	ti := textinput.New()
 	ti.Placeholder = "Type to search..."
 	ti.Width = 30
@@ -249,12 +251,13 @@ func NewSearcher(hosts []host.Host) SearchModel {
 	uInput.CharLimit = 100
 
 	return SearchModel{
-		phase:     phaseSearch,
-		input:     ti,
-		userInput: uInput,
-		list:      l,
-		hosts:     hosts,
-		compact:   compact,
+		phase:       phaseSearch,
+		input:       ti,
+		userInput:   uInput,
+		list:        l,
+		hosts:       hosts,
+		searchables: searchables,
+		compact:     compact,
 	}
 }
 

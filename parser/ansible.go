@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
+	"github.com/ubmagh/taq/config"
 	"github.com/ubmagh/taq/host"
+	"github.com/ubmagh/taq/ui"
 )
 
 type ansibleGroup struct {
@@ -85,7 +87,22 @@ func parseAnsibleFile(path string) ([]host.Host, error) {
 
 	var inv map[string]ansibleGroup
 	if err := yaml.Unmarshal(data, &inv); err != nil {
-		return nil, err // not an inventory file (e.g. playbook, vars file) — skip
+		// File is likely a playbook, vars file, or other non-inventory YAML — skip it.
+		if config.IsDebugMode() {
+			ui.Warn("skipping %s: not an inventory file (%v)", path, err)
+		}
+		return nil, nil
+	}
+
+	if len(inv) == 0 {
+		if config.IsDebugMode() {
+			ui.Warn("skipping %s: parsed as inventory but contains no groups", path)
+		}
+		return nil, nil
+	}
+
+	if config.IsDebugMode() {
+		ui.Info("loading ansible inventory file: %s", path)
 	}
 
 	var hosts []host.Host
@@ -96,10 +113,16 @@ func parseAnsibleFile(path string) ([]host.Host, error) {
 }
 
 func flattenAnsibleGroup(name string, group ansibleGroup, inheritedVars ansibleVars, parentGroups []string) []host.Host {
-	// merge: inherited < group vars (group overrides inherited)
-	groupVars := make(ansibleVars)
-	maps.Copy(groupVars, inheritedVars)
-	maps.Copy(groupVars, group.Vars)
+	// Lazy merge: only allocate a new map when this group actually has its own vars
+	// to override; otherwise share the inherited reference (it is never mutated).
+	var groupVars ansibleVars
+	if len(group.Vars) > 0 {
+		groupVars = make(ansibleVars, len(inheritedVars)+len(group.Vars))
+		maps.Copy(groupVars, inheritedVars)
+		maps.Copy(groupVars, group.Vars)
+	} else {
+		groupVars = inheritedVars
+	}
 
 	// copy parent groups and append current (exclude "all")
 	groups := make([]string, len(parentGroups))
@@ -111,10 +134,15 @@ func flattenAnsibleGroup(name string, group ansibleGroup, inheritedVars ansibleV
 	var hosts []host.Host
 
 	for hostname, hostVars := range group.Hosts {
-		// merge: group vars < host vars (host overrides group)
-		effective := make(ansibleVars)
-		maps.Copy(effective, groupVars)
-		maps.Copy(effective, hostVars)
+		// Lazy merge: only allocate when the host has overrides.
+		var effective ansibleVars
+		if len(hostVars) > 0 {
+			effective = make(ansibleVars, len(groupVars)+len(hostVars))
+			maps.Copy(effective, groupVars)
+			maps.Copy(effective, hostVars)
+		} else {
+			effective = groupVars
+		}
 
 		address := effective.str("ansible_host")
 		if address == "" {
