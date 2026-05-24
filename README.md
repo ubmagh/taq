@@ -28,13 +28,15 @@ make install
 ## Usage
 
 ```
-taq                        # launch interactive SSH search
-taq -l, --local-forward    # launch in local port-forward mode (-L)
-taq -r, --remote-forward   # launch in remote/reverse port-forward mode (-R)
-taq --validate             # parse inventories, report host count, then exit
-taq --debug,   -d          # enable verbose output (combine with any flag)
-taq --version, -v          # show version
-taq --help,    -h          # show help
+taq                          # launch interactive SSH search
+taq -l, --local-forward      # launch in local port-forward mode (-L)
+taq -r, --remote-forward     # launch in remote/reverse port-forward mode (-R)
+taq --list [query]           # list all hosts (or filter by query), then exit
+taq --list [query] -o fmt    # same with output format: table (default), json, yaml, plain
+taq --validate               # parse inventories, report host count, then exit
+taq --debug,   -d            # enable verbose output (combine with any flag)
+taq --version, -v            # show version
+taq --help,    -h            # show help
 ```
 
 **Keybindings:**
@@ -87,6 +89,44 @@ groups:
 ```
 
 See `example-inventories/` for more examples.
+
+## Non-interactive mode
+
+`--list` prints hosts without launching the TUI — useful for scripting, auditing, or piping into other tools.
+
+```sh
+taq --list                        # all hosts, table format
+taq --list web                    # fuzzy-filter "web", table format
+taq --list -o json                # all hosts as JSON
+taq --list -o json prod           # filter "prod", output JSON
+taq --list -o yaml                # all hosts as YAML
+taq --list -o plain               # name + address, one per line
+```
+
+**Output formats:**
+
+| Format | Description |
+|--------|-------------|
+| `table` | Aligned columns: NAME, ADDRESS, USER, PORT, GROUPS *(default)* |
+| `json`  | JSON array of host objects |
+| `yaml`  | YAML sequence of host objects |
+| `plain` | `name address` one per line — pipe-friendly |
+
+**Examples:**
+
+```sh
+# Count all hosts
+taq --list -o plain | wc -l
+
+# Get all hosts in a group, pipe to fzf
+taq --list -o plain prod | fzf
+
+# Extract addresses with jq
+taq --list -o json | jq -r '.[].address'
+
+# Find all hosts on a specific subnet
+taq --list -o json | jq '.[] | select(.address | startswith("10.0.1."))'
+```
 
 ## Port Forwarding
 

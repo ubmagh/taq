@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 
+	"github.com/ubmagh/taq/output"
 	"github.com/ubmagh/taq/parser"
 	"github.com/ubmagh/taq/search"
 	"github.com/ubmagh/taq/ssh"
@@ -31,6 +33,8 @@ func printHelp() {
 	taq                          # launch interactive SSH search
 	taq -l, --local-forward      # launch in local port-forward mode (-L)
 	taq -r, --remote-forward     # launch in remote/reverse port-forward mode (-R)
+	taq --list [query]           # list all hosts (or filter by query), then exit
+	taq --list [query] -o fmt    # same, with output format: table (default), json, yaml, plain
 	taq --validate               # parse inventories, report host count, then exit
 	taq --debug,   -d            # enable verbose output (combine with any flag)
 	taq --version, -v            # show version
@@ -48,29 +52,65 @@ func printHelp() {
 }
 
 func main() {
-	var debugMode, validateMode bool
+	var debugMode, validateMode, listMode bool
 	forwardMode := search.KindSSH
+	var outputFormat, listQuery string
 
-	for _, arg := range os.Args[1:] {
-		switch arg {
-		case "--version", "-v":
+	// Index-based loop so we can consume the next arg as a flag value (e.g. -o json).
+	args := os.Args[1:]
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--version" || arg == "-v":
 			fmt.Printf("taq %s - %s\n", version, repoURL)
 			return
-		case "--help", "-h":
+		case arg == "--help" || arg == "-h":
 			printHelp()
 			return
-		case "--debug", "-d":
+		case arg == "--debug" || arg == "-d":
 			debugMode = true
-		case "--validate":
+		case arg == "--validate":
 			validateMode = true
-		case "-l", "--local-forward":
+		case arg == "--list":
+			listMode = true
+		case arg == "-l" || arg == "--local-forward":
 			forwardMode = search.KindLocalForward
-		case "-r", "--remote-forward":
+		case arg == "-r" || arg == "--remote-forward":
 			forwardMode = search.KindRemoteForward
+		case arg == "-o" || arg == "--output":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "flag -o/--output requires a value: table, json, yaml, plain")
+				os.Exit(1)
+			}
+			i++
+			outputFormat = args[i]
+		case strings.HasPrefix(arg, "--output="):
+			outputFormat = strings.TrimPrefix(arg, "--output=")
+		case !strings.HasPrefix(arg, "-"):
+			// Positional argument: treated as a search query for --list.
+			listQuery = arg
 		default:
 			fmt.Fprintf(os.Stderr, "unknown flag: %s\n", arg)
 			os.Exit(1)
 		}
+	}
+
+	// Cross-flag validations.
+	if outputFormat != "" && !listMode {
+		fmt.Fprintln(os.Stderr, "flag -o/--output requires --list")
+		os.Exit(1)
+	}
+	if listQuery != "" && !listMode {
+		fmt.Fprintf(os.Stderr, "unexpected argument %q — did you mean: taq --list %q ?\n", listQuery, listQuery)
+		os.Exit(1)
+	}
+	if listMode && forwardMode != search.KindSSH {
+		fmt.Fprintln(os.Stderr, "--list cannot be combined with -l/--local-forward or -r/--remote-forward")
+		os.Exit(1)
+	}
+	if listMode && validateMode {
+		fmt.Fprintln(os.Stderr, "--list and --validate cannot be used together")
+		os.Exit(1)
 	}
 
 	if debugMode {
@@ -83,6 +123,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// --validate
 	if validateMode {
 		if len(inventoryHosts) == 0 {
 			ui.Warn("no hosts found — create %s or set %s", "$HOME/.config/taq/inventory.yaml", "TAQ_ANSIBLE_INVS")
@@ -92,6 +133,25 @@ func main() {
 		return
 	}
 
+	// --list [query] [-o format]
+	if listMode {
+		filtered := search.FilterHosts(inventoryHosts, listQuery)
+		if len(filtered) == 0 {
+			if listQuery != "" {
+				ui.Warn("no hosts matched %q", listQuery)
+				os.Exit(1)
+			}
+			ui.Warn("no hosts found — create %s or set %s", "$HOME/.config/taq/inventory.yaml", "TAQ_ANSIBLE_INVS")
+			os.Exit(0)
+		}
+		if err := output.Print(filtered, outputFormat); err != nil {
+			ui.Error("%v", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// Interactive mode.
 	if len(inventoryHosts) == 0 {
 		ui.Warn("no hosts found — create %s or set %s", "$HOME/.config/taq/inventory.yaml", "TAQ_ANSIBLE_INVS")
 		os.Exit(0)

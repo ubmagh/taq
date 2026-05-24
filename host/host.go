@@ -6,12 +6,12 @@ import (
 )
 
 type Host struct {
-	Name             string            `yaml:"name"`
-	Address          string            `yaml:"address"`
-	User             string            `yaml:"user,omitempty"`
-	KeyPath          string            `yaml:"key_path,omitempty"`
-	Labels           map[string]string `yaml:"labels,omitempty"`
-	Port             string            `yaml:"port,omitempty"`
+	Name    string            `yaml:"name"               json:"name"`
+	Address string            `yaml:"address"            json:"address"`
+	User    string            `yaml:"user,omitempty"     json:"user,omitempty"`
+	KeyPath string            `yaml:"key_path,omitempty" json:"key_path,omitempty"`
+	Labels  map[string]string `yaml:"labels,omitempty"   json:"labels,omitempty"`
+	Port    string            `yaml:"port,omitempty"     json:"port,omitempty"`
 	searchable string
 }
 
