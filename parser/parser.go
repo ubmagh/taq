@@ -9,6 +9,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/ubmagh/taq/config"
 	"github.com/ubmagh/taq/host"
+	"github.com/ubmagh/taq/ui"
 )
 
 func Parse() ([]host.Host, error) {
@@ -67,6 +68,9 @@ func applyDefaults(hosts []host.Host) []host.Host {
 	for _, h := range hosts {
 		key := h.Name + "|" + h.Address
 		if seen[key] {
+			if config.IsDebugMode() {
+				ui.Warn("duplicate host skipped: %q (%s)", h.Name, h.Address)
+			}
 			continue
 		}
 		seen[key] = true

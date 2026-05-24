@@ -29,8 +29,10 @@ make install
 
 ```
 taq               # launch interactive search
-taq --help,  -h   # show help
-taq --version,-v  # show version
+taq --help,    -h # show help
+taq --version, -v # show version
+taq --validate    # parse inventories, report host count, then exit
+taq --debug,   -d # enable verbose output (combine with --validate or normal run)
 ```
 
 **Keybindings:**
@@ -50,6 +52,8 @@ Ctrl+C    exit
 | `TAQ_DEFAULT_SSH_KEY_PATH` | _(none)_ | Default SSH key path |
 | `TAQ_ANSIBLE_INVS` | _(none)_ | Semicolon-separated list of Ansible project inventory **directories** |
 | `TAQ_DISPLAY_MODE` | `detailed` | List display mode: `detailed` or `compact` |
+| `TAQ_SSH_TIMEOUT` | _(none)_ | SSH connect timeout in seconds (e.g. `5`) |
+| `TAQ_DEBUG` | _(none)_ | Set to any value to enable verbose/debug output |
 
 Paths support `$HOME` and other environment variable expansion.
 
@@ -86,3 +90,4 @@ See `example-inventories/` for more examples.
 - Multiple taq-inventory sources ?
 - Nested groups on taq-inventory ?
 - Remote inventory (URL, repository) ?
+- Interactive SSH port forwarding helper (`-L`/`-R`) ?

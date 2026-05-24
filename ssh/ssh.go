@@ -23,6 +23,9 @@ func sshArgs(h host.Host) []string {
 	if h.Port != "" {
 		args = append(args, "-p", strings.TrimSpace(h.Port))
 	}
+	if timeout := config.GetSSHTimeout(); timeout != "" {
+		args = append(args, "-o", "ConnectTimeout="+timeout)
+	}
 	args = append(args, fmt.Sprintf("%s@%s", h.User, h.Address))
 	return args
 }

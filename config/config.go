@@ -13,6 +13,8 @@ const (
 	envAnsibleInvs   = "TAQ_ANSIBLE_INVS"
 	envSshKeyPath    = "TAQ_DEFAULT_SSH_KEY_PATH"
 	envDisplayMode   = "TAQ_DISPLAY_MODE"
+	envDebug         = "TAQ_DEBUG"
+	envSSHTimeout    = "TAQ_SSH_TIMEOUT"
 )
 
 func IsCompactMode() bool {
@@ -43,4 +45,15 @@ func GetAnsibleInventories() []string {
 
 func GetDefaultSshKeyPath() string {
 	return os.Getenv(envSshKeyPath)
+}
+
+// IsDebugMode returns true when TAQ_DEBUG is set to any non-empty value.
+func IsDebugMode() bool {
+	return os.Getenv(envDebug) != ""
+}
+
+// GetSSHTimeout returns the value of TAQ_SSH_TIMEOUT (seconds).
+// An empty string means no explicit timeout is set.
+func GetSSHTimeout() string {
+	return os.Getenv(envSSHTimeout)
 }
