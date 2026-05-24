@@ -15,11 +15,16 @@ import (
 func Parse() ([]host.Host, error) {
 	var all []host.Host
 
-	taqHosts, err := parseTaqFile(config.GetDefaultInventoryPath())
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, err
+	for _, path := range config.GetInventoryPaths() {
+		taqHosts, err := parseTaqFile(path)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return nil, fmt.Errorf("inventory %q: %w", path, err)
+		}
+		if config.IsDebugMode() && len(taqHosts) > 0 {
+			ui.Info("loaded %d host(s) from %s", len(taqHosts), path)
+		}
+		all = append(all, taqHosts...)
 	}
-	all = append(all, taqHosts...)
 
 	for _, dir := range config.GetAnsibleInventories() {
 		ansibleHosts, err := parseAnsibleDir(dir)

@@ -43,8 +43,8 @@ func printHelp() {
 	Environment Variables:
 	TAQ_DEFAULT_USER         : Default SSH username [$USER]
 	TAQ_DEFAULT_SSH_KEY_PATH : Default SSH key path []
+	TAQ_INVENTORY_PATHS      : Semicolon-separated taq-inventory file paths [$HOME/.config/taq/inventory.yaml]
 	TAQ_ANSIBLE_INVS         : Semicolon-separated list of Ansible inventory root directories []
-	TAQ_INVENTORY_PATH       : Inventory file path [$HOME/.config/taq/inventory.yaml]
 	TAQ_DISPLAY_MODE         : List display mode: "detailed" (default) or "compact"
 	TAQ_SSH_TIMEOUT          : SSH connect timeout in seconds (e.g. 5) []
 	TAQ_DEBUG                : Set to any value to enable debug/verbose output []

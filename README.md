@@ -52,7 +52,7 @@ Ctrl+C    exit
 
 | Variable | Default | Description |
 |---|---|---|
-| `TAQ_INVENTORY_PATH` | `$HOME/.config/taq/inventory.yaml` | Path to inventory file |
+| `TAQ_INVENTORY_PATHS` | `$HOME/.config/taq/inventory.yaml` | Semicolon-separated taq-inventory file paths (one or many) |
 | `TAQ_DEFAULT_USER` | `$USER` | Default SSH username |
 | `TAQ_DEFAULT_SSH_KEY_PATH` | _(none)_ | Default SSH key path |
 | `TAQ_ANSIBLE_INVS` | _(none)_ | Semicolon-separated list of Ansible project inventory **directories** |
@@ -160,6 +160,5 @@ You can also type the full SSH spec (`8080:somehost:3000`) if you need a non-loc
 
 ## Todos
 
-- Multiple taq-inventory sources ?
 - Nested groups on taq-inventory ?
 - Remote inventory (URL, repository) ?
