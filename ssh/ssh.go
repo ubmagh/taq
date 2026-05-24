@@ -11,7 +11,10 @@ import (
 	"github.com/ubmagh/taq/ui"
 )
 
-func sshArgs(h host.Host) []string {
+// buildBaseArgs returns the SSH args shared by all connection types:
+// identity file, port, and connect timeout. The caller appends
+// mode-specific flags and the destination.
+func buildBaseArgs(h host.Host) []string {
 	var args []string
 	keyPath := h.KeyPath
 	if keyPath == "" {
@@ -26,8 +29,26 @@ func sshArgs(h host.Host) []string {
 	if timeout := config.GetSSHTimeout(); timeout != "" {
 		args = append(args, "-o", "ConnectTimeout="+timeout)
 	}
-	args = append(args, fmt.Sprintf("%s@%s", h.User, h.Address))
 	return args
+}
+
+// clearScreen runs the clear command before handing the terminal to SSH.
+func clearScreen() {
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	_ = cmd.Run()
+}
+
+// handleSSHError silently ignores a Ctrl+C exit (code 130) and prints
+// an error message for everything else.
+func handleSSHError(err error, action string) {
+	if err == nil {
+		return
+	}
+	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 130 {
+		return
+	}
+	ui.Error("%s: %v", action, err)
 }
 
 // parseForwardRule converts the friendly shorthand "8080->3000" or "8080→3000"
@@ -46,22 +67,9 @@ func parseForwardRule(rule string) string {
 
 // OpenPortForwardSession opens a port-forwarding-only SSH session (-N).
 // flag must be "-L" (local) or "-R" (remote/reverse).
-// rules are in the shorthand format "localPort->remotePort".
+// rules use the shorthand format "localPort->remotePort".
 func OpenPortForwardSession(h host.Host, flag string, rules []string) {
-	var args []string
-	keyPath := h.KeyPath
-	if keyPath == "" {
-		keyPath = config.GetDefaultSshKeyPath()
-	}
-	if keyPath != "" {
-		args = append(args, "-i", keyPath)
-	}
-	if h.Port != "" {
-		args = append(args, "-p", strings.TrimSpace(h.Port))
-	}
-	if timeout := config.GetSSHTimeout(); timeout != "" {
-		args = append(args, "-o", "ConnectTimeout="+timeout)
-	}
+	args := buildBaseArgs(h)
 	for _, rule := range rules {
 		args = append(args, flag, parseForwardRule(rule))
 	}
@@ -72,27 +80,18 @@ func OpenPortForwardSession(h host.Host, flag string, rules []string) {
 		kindStr = "Remote"
 	}
 
-	cmd := exec.Command("clear")
-	cmd.Stdout = os.Stdout
-	_ = cmd.Run()
-
+	clearScreen()
 	fmt.Printf("Port Forwarding [%s] — %s (%s@%s)\n", kindStr, h.Name, h.User, h.Address)
 	for _, r := range rules {
 		fmt.Printf("  → %s\n", r)
 	}
 	fmt.Println("\nCtrl+C to stop.")
 
-	cmd = exec.Command("ssh", args...)
+	cmd := exec.Command("ssh", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 130 {
-			return
-		}
-		ui.Error("port forwarding failed: %v", err)
-	}
+	handleSSHError(cmd.Run(), "port forwarding failed")
 }
 
 func OpenSSHSession(h host.Host) {
@@ -100,18 +99,13 @@ func OpenSSHSession(h host.Host) {
 		ui.Warn("no address configured for host %q", h.Name)
 		return
 	}
-	cmd := exec.Command("clear")
-	cmd.Stdout = os.Stdout
-	_ = cmd.Run()
-	cmd = exec.Command("ssh", sshArgs(h)...)
+	args := buildBaseArgs(h)
+	args = append(args, fmt.Sprintf("%s@%s", h.User, h.Address))
+
+	clearScreen()
+	cmd := exec.Command("ssh", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 130 {
-			return
-		}
-		ui.Error("SSH connection failed: %v", err)
-	}
+	handleSSHError(cmd.Run(), "SSH connection failed")
 }
