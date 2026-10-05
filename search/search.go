@@ -233,6 +233,9 @@ func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if user != "" {
 					m.selectedHost.User = user
 				}
+				if user == "0" {
+					m.selectedHost.User = "root"
+				}
 				if m.mode != KindSSH {
 					// Forward mode: collect rules next.
 					m.phase = phasePortForward
